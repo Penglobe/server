@@ -1,4 +1,5 @@
 package com.penglobe.server.domain.user;
+import com.penglobe.server.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,7 +9,7 @@ import java.time.LocalDate;
 @Table(name = "user_counters")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
-public class UserCounters {
+public class UserCounters extends BaseEntity {
 
     @Id
     private Long userId; // users.id와 동일, PK + FK
