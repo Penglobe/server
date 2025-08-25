@@ -13,6 +13,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserType type = UserType.USER;
@@ -29,6 +30,7 @@ public class User {
     @Column(name = "home_region_id")
     private Integer homeRegionId;
 
+    @Builder.Default
     @Column(name = "total_point", nullable = false)
     private Integer totalPoint = 0; // 보유 포인트 캐시
 
@@ -38,6 +40,7 @@ public class User {
     @Column(name = "kakao_id")
     private Long kakaoId;
 
+    @Builder.Default
     @Column(name = "is_profile_complete", nullable = false)
     private Boolean isProfileComplete = false;
 }
