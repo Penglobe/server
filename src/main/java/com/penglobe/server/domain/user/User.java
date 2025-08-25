@@ -1,5 +1,6 @@
 package com.penglobe.server.domain.user;
 
+import com.penglobe.server.domain.BaseEntity;
 import com.penglobe.server.domain.user.UserType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,7 +9,7 @@ import lombok.*;
 @Table(name = "users")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

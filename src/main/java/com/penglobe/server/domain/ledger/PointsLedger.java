@@ -1,4 +1,5 @@
 package com.penglobe.server.domain.ledger;
+import com.penglobe.server.domain.BaseEntity;
 import com.penglobe.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,7 +17,7 @@ import java.time.LocalDate;
 )
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
-public class PointsLedger {
+public class PointsLedger extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
