@@ -1,6 +1,7 @@
 package com.penglobe.server.domain.quiz;
 
 
+import com.penglobe.server.domain.BaseEntity;
 import com.penglobe.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
 @Getter@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuizQuestions {
+public class QuizQuestions extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +33,5 @@ public class QuizQuestions {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();  // 생성 시간
+    
 }
