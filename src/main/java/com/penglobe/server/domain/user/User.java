@@ -1,4 +1,4 @@
-package com.penglobe.server.domain;
+package com.penglobe.server.domain.user;
 
 import jakarta.persistence.*;
 import lombok.*;
