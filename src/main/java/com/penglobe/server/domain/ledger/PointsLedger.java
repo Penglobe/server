@@ -1,4 +1,5 @@
 package com.penglobe.server.domain.ledger;
+import com.penglobe.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
