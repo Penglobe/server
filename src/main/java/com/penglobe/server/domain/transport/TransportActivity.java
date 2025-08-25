@@ -1,4 +1,5 @@
 package com.penglobe.server.domain.transport;
+import com.penglobe.server.domain.BaseEntity;
 import com.penglobe.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "transport_activities")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
-public class TransportActivity {
+public class TransportActivity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
