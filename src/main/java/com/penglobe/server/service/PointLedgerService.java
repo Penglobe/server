@@ -26,7 +26,7 @@ public class PointLedgerService {
         User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("존재하지 않은 사용자입니다."));
 
         //리스트
-        List<PointsLedger> pointlist = pointsLedgerRepository.pointListById(user);
+        List<PointsLedger> pointlist = pointsLedgerRepository.findByUserOrderByEventDateDesc(user);
 
         return pointlist.stream().map(l -> new PointDTO(
                 l.getEventDate(), l.getChangeAmount(), l.getReason(), l.getBalanceAfter())).collect(Collectors.toList());

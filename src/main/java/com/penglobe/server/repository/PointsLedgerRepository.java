@@ -8,5 +8,5 @@ import java.util.List;
 
 public interface PointsLedgerRepository extends JpaRepository<PointsLedger, Long> {
     //사용자 id로 포인트 사용내역 조회
-    List<PointsLedger> pointListById(User user);
+    List<PointsLedger> findByUserOrderByEventDateDesc(User user);
 }
