@@ -30,8 +30,8 @@ public class User {
     @Column(name = "home_region_id")
     private Integer homeRegionId;
 
-    @Column(nullable = false)
-    private Integer totalIce = 0; // 보유 포인트 캐시
+    @Column(name = "total_point", nullable = false)
+    private Integer totalPoint = 0; // 보유 포인트 캐시
 
     @Column(name = "profile_id")
     private Integer profileId;
