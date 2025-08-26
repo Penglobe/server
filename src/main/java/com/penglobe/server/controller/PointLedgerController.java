@@ -1,6 +1,7 @@
 package com.penglobe.server.controller;
 
 import com.penglobe.server.domain.ledger.PointsLedger;
+import com.penglobe.server.dto.ApiResponse;
 import com.penglobe.server.dto.BalanceDTO;
 import com.penglobe.server.dto.PointDTO;
 import com.penglobe.server.dto.PointLedgerResponse;
@@ -34,12 +35,12 @@ public class PointLedgerController {
             summary = "거래 내역 조회", description = "기간별 사용자 포인트 거래 내역 조회입니다. (기간을 설정하지 않으면 기본적으로 이번 달 내역을 조회합니다.)"
     )
     @GetMapping("/ledger/{userId}")
-    public ResponseEntity<PointLedgerResponse> getPointLedger(@PathVariable Long userId,
+    public ResponseEntity<ApiResponse<PointLedgerResponse>> getPointLedger(@PathVariable Long userId,
                                                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to ) {
         List<PointDTO> points = pointLedgerService.getUserPointList(userId, from, to);
         PointLedgerResponse response = new PointLedgerResponse(points, points.size());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     //잔액 조회
@@ -47,8 +48,8 @@ public class PointLedgerController {
             summary = "잔액조회", description = "남은 잔액을 조회합니다."
     )
     @GetMapping("/balance/{userId}")
-    public ResponseEntity<BalanceDTO> getBalance(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<BalanceDTO>> getBalance(@PathVariable Long userId) {
         BalanceDTO balance = pointLedgerService.getCurrentBalance(userId);
-        return ResponseEntity.ok(balance);
+        return ResponseEntity.ok(ApiResponse.success(balance));
     }
 }
