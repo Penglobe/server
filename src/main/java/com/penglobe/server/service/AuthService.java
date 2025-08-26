@@ -3,6 +3,7 @@ package com.penglobe.server.service;
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.dto.AuthDTO.*;
 import com.penglobe.server.repository.UserRepository;
+import com.penglobe.server.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RestClient restClient = RestClient.create();
+    private final JwtTokenProvider jwtTokenProvider;
 
     //카카오 로그인
     //앱에서 받은 accessToken으로 /v2/user/me 호출
@@ -44,7 +46,7 @@ public class AuthService {
             return userRepository.save(u);
         });
 
-        String jwt = issueJwt(user.getId());
+        String jwt = jwtTokenProvider.createToken(user.getId(), "USER");
         return new AuthResponse(jwt, Boolean.TRUE.equals(user.getIsProfileComplete()), user.getId());
     }
 
@@ -66,13 +68,13 @@ public class AuthService {
 
     //자체 로그인
     public AuthResponse loginLocal(LocalLoginRequest req) {
-        User u = userRepository.findByEmail(req.email)
+        User user = userRepository.findByEmail(req.email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
-        if (u.getPasswordHash() == null || !passwordEncoder.matches(req.password, u.getPasswordHash())) {
+        if (user.getPasswordHash() == null || !passwordEncoder.matches(req.password, user.getPasswordHash())) {
             throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
-        String jwt = issueJwt(u.getId());
-        return new AuthResponse(jwt, Boolean.TRUE.equals(u.getIsProfileComplete()), u.getId());
+        String jwt = jwtTokenProvider.createToken(user.getId(), "USER");
+        return new AuthResponse(jwt, Boolean.TRUE.equals(user.getIsProfileComplete()), user.getId());
     }
 
     // 카카오용 프로필 완료 API: 지역/닉네임 받아 complete=true
