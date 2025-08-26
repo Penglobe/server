@@ -11,7 +11,7 @@ public class Regions {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Integer id; //지역 아이디
 
     @Column(nullable = false)
     private String name; //지역 명
