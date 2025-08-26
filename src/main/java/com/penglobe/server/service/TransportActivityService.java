@@ -73,7 +73,7 @@ public class TransportActivityService {
         // 누적 카운터 업데이트
         UserCounters counters = countersRepository.findById(activity.getUser().getId())
                 .orElse(UserCounters.builder().user(activity.getUser()).build());
-        counters.setTotalDistanceM(counters.getTotalDistanceM() + distanceM);
+        counters.setTotalDistanceCo2Kg(counters.getTotalDistanceCo2Kg() + distanceM);
         countersRepository.save(counters);
 
         return activity;
