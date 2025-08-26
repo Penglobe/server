@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,7 +29,7 @@ public class TransportActivityController {
             description = "사용자가 이동을 시작합니다. mode(WALK/BIKE/TRANSIT)와 userId가 필요합니다."
     )
     @PostMapping("/start")
-    public ApiResponse<TransportActivityDto> start(
+    public ResponseEntity<ApiResponse<TransportActivityDto>> start(
             @Parameter(description = "사용자 ID", required = true, example = "1")
             @RequestParam Long userId,
             @Parameter(description = "이동 수단", required = true, example = "WALK")
@@ -35,8 +37,12 @@ public class TransportActivityController {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
         TransportActivity activity = activityService.startActivity(user, mode);
-        return ApiResponse.ok(TransportActivityDto.fromEntity(activity));
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED) // 활동 시작 → 보통 201 Created
+                .body(ApiResponse.success(201, "이동을 시작했습니다.", TransportActivityDto.fromEntity(activity)));
     }
 
     @Operation(
@@ -44,7 +50,7 @@ public class TransportActivityController {
             description = "사용자가 이동을 종료합니다. 이동 거리(m)와 선택적으로 pathGeojson을 전달할 수 있습니다."
     )
     @PostMapping("/{id}/stop")
-    public ApiResponse<TransportActivityDto> stop(
+    public ResponseEntity<ApiResponse<TransportActivityDto>> stop(
             @Parameter(description = "활동 ID", required = true, example = "10")
             @PathVariable Long id,
             @Parameter(description = "이동 거리(m)", required = true, example = "1200")
@@ -53,6 +59,9 @@ public class TransportActivityController {
             @RequestBody(required = false) String pathGeojson) {
 
         TransportActivity activity = activityService.stopActivity(id, distanceM, pathGeojson);
-        return ApiResponse.ok(TransportActivityDto.fromEntity(activity));
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(200, "이동을 종료했습니다.", TransportActivityDto.fromEntity(activity)));
     }
 }
