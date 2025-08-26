@@ -13,8 +13,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PointDTO {
-    private LocalDate eventDate;
-    private Integer changeAmount;
-    private LedgerReason reason;
-    private Integer balanceAfter;
+    private LocalDate eventDate; //날짜
+    private Integer changeAmount; //포인트
+    private LedgerReason reason; //포인트 지급/차감 사유
+    private Integer balanceAfter; //남은 금액
 }
+
+
