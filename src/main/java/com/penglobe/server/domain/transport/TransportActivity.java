@@ -34,7 +34,7 @@ public class TransportActivity extends BaseEntity {
     private Integer distanceM = 0;
 
     @Column(nullable = false)
-    private Integer co2g = 0;
+    private Integer co2Kg = 0;
 
     @Column(nullable = false)
     private LocalDate takenOn;

@@ -41,7 +41,7 @@ public class TransportActivityDto {
                 .startTime(entity.getStartTime())
                 .endTime(entity.getEndTime())
                 .distanceM(entity.getDistanceM())
-                .co2g(entity.getCo2g())
+                .co2g(entity.getCo2Kg())
                 .build();
     }
 }
