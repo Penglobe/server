@@ -4,9 +4,12 @@ import com.penglobe.server.domain.user.User;
 import com.penglobe.server.dto.AuthDTO.*;
 import com.penglobe.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -22,9 +25,14 @@ public class AuthService {
     public AuthResponse loginWithKakao (String accessToken){
         Map<?,?> me = restClient.get()
                 .uri("https://kapi.kakao.com/v2/user/me")
-                .header("Authorization", "Bearer" + accessToken)
+                .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
                 .body(Map.class);
+
+        if (me == null || me.get("id") == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Kakao /v2/user/me returned no id: " + String.valueOf(me));
+        }
 
         Long kakaoId = ((Number) me.get("id")).longValue();
 
