@@ -1,13 +1,14 @@
 package com.penglobe.server.controller;
 
+import com.penglobe.server.dto.ApiResponse;
 import com.penglobe.server.dto.AuthDTO.*;
 import com.penglobe.server.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.*;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,30 +22,41 @@ public class AuthController {
 
     @Operation(summary = "카카오 로그인", description = "RN앱에서 받은 accessToken을 서버로 전달하면, 서버가 카카오 /v2/user/me로 검증 후 JWT를 발급합니다.")
     @PostMapping("/kakao")
-    public ResponseEntity<AuthResponse> kakao(@Valid @RequestHeader KakaoLoginRequest req) {
-        return ResponseEntity.ok(authService.loginWithKakao(req.accessToken));
+    public ResponseEntity<ApiResponse<AuthResponse>> kakao(@Valid @RequestBody KakaoLoginRequest request) {
+        AuthResponse res = authService.loginWithKakao(request.getAccessToken());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(200, "카카오 로그인 성공", res));
     }
 
-    @Operation(summary = "자체 회원가입", description = "이메일/비밀번호/닉네임/지역을 입력받아 계정을 생성합니다.")
+    @Operation(summary = "자체 회원가입", description = "이메일/비밀번호/닉네임/지역 입력으로 계정을 생성합니다.")
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@Valid @RequestBody LocalSignupRequest req) {
+    public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody LocalSignupRequest req) {
         authService.signupLocal(req);
-        return ResponseEntity.ok().build();
+        return ResponseEntity
+                .status(HttpStatus.CREATED) // 201 Created
+                .body(ApiResponse.success(201, "회원가입 완료", null));
     }
 
-    @Operation(summary = "자체 로그인", description = "이메일/비밀번호로 로그인 후 JWT를 발급합니다.")
+    @Operation(summary = "자체 로그인", description = "이메일/비밀번호로 로그인 후 JWT 발급")
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LocalLoginRequest req) {
-        return ResponseEntity.ok(authService.loginLocal(req));
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LocalLoginRequest req) {
+        AuthResponse res = authService.loginLocal(req);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(200, "로그인 성공", res));
     }
 
-    @Operation(summary = "카카오 사용자 프로필 완료", description = "카카오 로그인 사용자의 지역/닉네임 등을 입력 받아 isProfileComplete=true로 업데이트합니다.")
-    @PatchMapping("/me/complete-profile")
-    public ResponseEntity<?> completeProfile(
+    @Operation(summary = "카카오 사용자 프로필 완료",
+            description = "카카오 로그인 사용자의 지역/닉네임 등을 저장하고 isProfileComplete=true로 업데이트")
+    @PatchMapping("/me/{userId}/complete-profile")
+    public ResponseEntity<ApiResponse<Void>> completeProfile(
             @PathVariable long userId,
             @Valid @RequestBody CompleteProfileRequest req) {
         authService.completeProfile(userId, req);
-        return ResponseEntity.ok().build();
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(200, "프로필 완료", null));
     }
 
 }
