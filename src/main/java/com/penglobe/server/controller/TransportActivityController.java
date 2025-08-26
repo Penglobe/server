@@ -2,18 +2,22 @@ package com.penglobe.server.controller;
 
 import com.penglobe.server.domain.transport.TransportActivity;
 import com.penglobe.server.domain.transport.TransportMode;
+import com.penglobe.server.domain.transport.UserPlaceBookmark;
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.dto.ApiResponse;
+import com.penglobe.server.dto.BookmarkDto;
 import com.penglobe.server.dto.TransportActivityDto;
 import com.penglobe.server.repository.UserRepository;
+import com.penglobe.server.service.BookmarkService;
 import com.penglobe.server.service.TransportActivityService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/transport")
@@ -22,46 +26,80 @@ import org.springframework.web.bind.annotation.*;
 public class TransportActivityController {
 
     private final TransportActivityService activityService;
+    private final BookmarkService bookmarkService;
     private final UserRepository userRepository;
 
-    @Operation(
-            summary = "이동 시작",
-            description = "사용자가 이동을 시작합니다. mode(WALK/BIKE/TRANSIT)와 userId가 필요합니다."
-    )
+    @Operation(summary = "이동 시작", description = "사용자가 이동을 시작합니다.")
     @PostMapping("/start")
     public ResponseEntity<ApiResponse<TransportActivityDto>> start(
-            @Parameter(description = "사용자 ID", required = true, example = "1")
             @RequestParam Long userId,
-            @Parameter(description = "이동 수단", required = true, example = "WALK")
-            @RequestParam TransportMode mode) {
-
+            @RequestParam TransportMode mode
+    ) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         TransportActivity activity = activityService.startActivity(user, mode);
 
         return ResponseEntity
-                .status(HttpStatus.CREATED) // 활동 시작 → 보통 201 Created
+                .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(201, "이동을 시작했습니다.", TransportActivityDto.fromEntity(activity)));
     }
 
-    @Operation(
-            summary = "이동 종료",
-            description = "사용자가 이동을 종료합니다. 이동 거리(m)와 선택적으로 pathGeojson을 전달할 수 있습니다."
-    )
+    @Operation(summary = "이동 종료", description = "사용자가 이동을 종료합니다.")
     @PostMapping("/{id}/stop")
     public ResponseEntity<ApiResponse<TransportActivityDto>> stop(
-            @Parameter(description = "활동 ID", required = true, example = "10")
             @PathVariable Long id,
-            @Parameter(description = "이동 거리(m)", required = true, example = "1200")
             @RequestParam int distanceM,
-            @Parameter(description = "경로 GeoJSON", required = false, example = "{\"type\":\"LineString\",...}")
-            @RequestBody(required = false) String pathGeojson) {
-
+            @RequestBody(required = false) String pathGeojson
+    ) {
         TransportActivity activity = activityService.stopActivity(id, distanceM, pathGeojson);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success(200, "이동을 종료했습니다.", TransportActivityDto.fromEntity(activity)));
+    }
+
+    @Operation(summary = "북마크 등록")
+    @PostMapping("/bookmarks")
+    public ResponseEntity<ApiResponse<BookmarkDto>> createBookmark(
+            @RequestParam Long userId,
+            @RequestBody BookmarkDto dto
+    ) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        UserPlaceBookmark b = bookmarkService.create(user, dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(201, "북마크 등록 완료", BookmarkDto.fromEntity(b)));
+    }
+
+    @Operation(summary = "내 북마크 목록 조회")
+    @GetMapping("/bookmarks")
+    public ResponseEntity<ApiResponse<List<BookmarkDto>>> listBookmarks(
+            @RequestParam Long userId
+    ) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        List<BookmarkDto> list = bookmarkService.findByUser(user)
+                .stream().map(BookmarkDto::fromEntity).toList();
+        return ResponseEntity.ok(ApiResponse.success(200, "북마크 조회 성공", list));
+    }
+
+    @Operation(summary = "북마크 수정")
+    @PutMapping("/bookmarks/{id}")
+    public ResponseEntity<ApiResponse<BookmarkDto>> updateBookmark(
+            @PathVariable Long id,
+            @RequestBody BookmarkDto dto
+    ) {
+        UserPlaceBookmark b = bookmarkService.update(id, dto);
+        return ResponseEntity.ok(ApiResponse.success(200, "북마크 수정 성공", BookmarkDto.fromEntity(b)));
+    }
+
+    @Operation(summary = "북마크 삭제")
+    @DeleteMapping("/bookmarks/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteBookmark(
+            @PathVariable Long id
+    ) {
+        bookmarkService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success(200, "북마크 삭제 성공", null));
     }
 }
