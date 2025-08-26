@@ -11,18 +11,33 @@ import java.time.LocalDate;
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class UserCounters extends BaseEntity {
 
+    /** users.id와 동일 (공유 PK) */
     @Id
-    private Long userId; // users.id와 동일, PK + FK
+    private Long userId;
 
-    @OneToOne
+    /** 공유 PK 매핑: user_counters.user_id = users.id */
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id") // FK = PK (이건 꼭 필요)
     private User user;
 
-    private Long totalDistanceM = 0L;
-    private Long totalDietAmount = 0L;
+    /** 누적 도보 절감량 (kg) */
+    @Builder.Default
+    private Long totalDistanceCo2Kg = 0L;
+
+    /** 누적 식단 절감량 (kg) */
+    @Builder.Default
+    private Long totalDietCo2Kg = 0L;
+
+    /** 누적 출석 일수 */
+    @Builder.Default
     private Integer attendanceTotalDays = 0;
+
+    /** 연속 출석 일수 */
+    @Builder.Default
     private Integer attendanceStreakDays = 0;
+
+    /** 마지막 출석 날짜 */
     private LocalDate lastAttendanceDate;
 
 }
