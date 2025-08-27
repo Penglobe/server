@@ -38,7 +38,7 @@ public class SurveyService {
             List<SurveyOption> options = optionRepository.findBySurveyItem_ItemId(item.getItemId());
 
             List<SurveyItemDTO.OptionDTO> dto = options.stream()
-                    .map(o -> new SurveyItemDTO.OptionDTO(o.getValue(), o.getDescription()))
+                    .map(o -> new SurveyItemDTO.OptionDTO(o.getValue(), ""))
                     .toList();
 
             result.add(new SurveyItemDTO(item.getItemId(), item.getCode(), dto));
@@ -50,7 +50,6 @@ public class SurveyService {
     public SurveyResultDTO submitSurvey(SurveySubmitRequestDTO dto) {
         SurveyResponse response = new SurveyResponse();
         response.setUserId(dto.getUserId());
-        response.setSurveyDate(LocalDate.now());
 
         double totalCo2 = 0;
         List<TopCo2DTO> co2List = new ArrayList<>();
@@ -70,9 +69,9 @@ public class SurveyService {
 
             // 항목별 최대 CO₂ 조회 (상대점수 계산)
             double maxCo2 = optionRepository.findMaxCo2ByItemId(option.getSurveyItem().getItemId());
-            double relativeScore = option.getCo2() / maxCo2; // 0~1 범위
+            double relativeScore = maxCo2 == 0 ? 0 : option.getCo2() / maxCo2;
 
-            co2List.add(new TopCo2DTO(relativeScore, option.getSurveyItem().getCode()));
+            co2List.add(new TopCo2DTO(relativeScore, option.getCo2(), option.getSurveyItem().getCode()));
             totalCo2 += option.getCo2();
         }
 
@@ -81,7 +80,7 @@ public class SurveyService {
 
     //상대점수 기준 Top3 선택
         List<TopCo2DTO> top3 = co2List.stream()
-                .sorted((o1, o2) -> Double.compare(o2.getCo2(), o1.getCo2()))
+                .sorted((o1, o2) -> Double.compare(o2.getRelativeScore(), o1.getRelativeScore()))
                 .limit(3)
                 .collect(Collectors.toList());
 

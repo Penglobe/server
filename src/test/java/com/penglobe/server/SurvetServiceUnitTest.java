@@ -68,12 +68,20 @@ class SurveyServiceUnitTest {
         when(optionRepository.findBySurveyItem_ItemIdAndValue(2L, 1)).thenReturn(Optional.of(opt2));
         when(optionRepository.findBySurveyItem_ItemIdAndValue(3L, 3)).thenReturn(Optional.of(opt3));
 
+
+        // maxCo2 조회 Mock (상대점수 계산용)
+        when(optionRepository.findMaxCo2ByItemId(1L)).thenReturn(2.0);
+        when(optionRepository.findMaxCo2ByItemId(2L)).thenReturn(2.0);
+        when(optionRepository.findMaxCo2ByItemId(3L)).thenReturn(3.0);
+
         SurveyResultDTO result = surveyService.submitSurvey(submitRequest);
 
         assertThat(result.getTotalCo2()).isEqualTo(6.5);
         assertThat(result.getTop3()).hasSizeLessThanOrEqualTo(3);
 
         System.out.println("총 CO2: " + result.getTotalCo2());
-        result.getTop3().forEach(top -> System.out.println(top.getCode() + " - CO2: " + top.getCo2()));
+        result.getTop3().forEach(top ->
+                System.out.println(top.getCode() + " - CO2: " + top.getCo2() + " / 상대점수: " + top.getRelativeScore())
+        );
     }
 }
