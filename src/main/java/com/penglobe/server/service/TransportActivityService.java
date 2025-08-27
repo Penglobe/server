@@ -48,19 +48,30 @@ public class TransportActivityService {
         int co2Kg = calculateCo2Saving(distanceM, activity.getMode());
         activity.setCo2Kg(co2Kg);
 
+        // 유저의 환경걸음을 통한 누적 절감량 업데이트
+        
+        // 유저 포인트 주기
+
         return activityRepository.save(activity);
     }
 
     // CO₂ 절감량 계산 로직
     private int calculateCo2Saving(int distanceM, TransportMode mode) {
         double km = distanceM / 1000.0;
-        double carCo2 = km * 140.0 / 1000.0; // g → kg 변환
 
+        // 🚗 승용차 평균 배출량: 200 g/km = 0.2 kg/km
+        double carCo2Kg = km * 0.2;
+
+        // 교통수단별 절감 비율
         double factor = switch (mode) {
             case WALK, BIKE -> 1.0; // 100% 절감
             case TRANSIT -> 0.5;    // 대중교통은 절반만 인정
         };
 
-        return (int) Math.round(carCo2 * factor);
+        // 반올림해서 int로 변환
+        // db에 저장은 반올림한 값으로 하지만 프론트에서는 거리를 이용해 소수점까지 표현하기.
+        return (int) Math.round(carCo2Kg * factor);
     }
+
+
 }
