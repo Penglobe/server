@@ -4,6 +4,7 @@ import com.penglobe.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -33,8 +34,8 @@ public class TransportActivity extends BaseEntity {
     @Column(nullable = false)
     private Integer distanceM = 0;
 
-    @Column(nullable = false)
-    private Integer co2Kg = 0;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal co2Kg = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private LocalDate takenOn;

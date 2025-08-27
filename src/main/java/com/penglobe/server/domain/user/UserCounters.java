@@ -3,6 +3,7 @@ import com.penglobe.server.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -23,11 +24,18 @@ public class UserCounters extends BaseEntity {
 
     /** 누적 도보 절감량 (kg) */
     @Builder.Default
-    private Long totalDistanceCo2Kg = 0L;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalDistanceCo2Kg = BigDecimal.ZERO;
 
     /** 누적 식단 절감량 (kg) */
     @Builder.Default
-    private Long totalDietCo2Kg = 0L;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalDietCo2Kg = BigDecimal.ZERO;
+
+    /** 누적 설문 절감량 (kg) */
+    @Builder.Default
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalSurveyCo2Kg = BigDecimal.ZERO;
 
     /** 누적 출석 일수 */
     @Builder.Default
