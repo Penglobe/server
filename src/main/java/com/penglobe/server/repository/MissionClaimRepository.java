@@ -1,0 +1,22 @@
+package com.penglobe.server.repository;
+
+import com.penglobe.server.domain.mission.MissionClaim;
+import com.penglobe.server.domain.mission.MissionMetric;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+
+public interface MissionClaimRepository extends JpaRepository<MissionClaim, Long> {
+    boolean existsByUserIdAndMetricAndTarget(Long userId, MissionMetric metric, Long target);
+
+    List<MissionClaim> findByUserIdAndMetric(Long userId, MissionMetric metric);
+
+    @Query("""
+        select max(c.target)
+        from MissionClaim c
+        where c.userId = :userId and c.metric = :metric
+    """)
+    Long findMaxClaimedTarget(@Param("userId") Long userId, @Param("metric") MissionMetric metric);
+}
