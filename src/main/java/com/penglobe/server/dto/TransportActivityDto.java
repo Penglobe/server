@@ -30,7 +30,7 @@ public class TransportActivityDto {
     private int distanceM;
 
     @Schema(description = "절감된 CO2 배출량 (그램)", example = "168")
-    private int co2g;
+    private int co2Kg;
 
     // Factory Method: Entity -> DTO
     public static TransportActivityDto fromEntity(TransportActivity entity) {
@@ -41,7 +41,7 @@ public class TransportActivityDto {
                 .startTime(entity.getStartTime())
                 .endTime(entity.getEndTime())
                 .distanceM(entity.getDistanceM())
-                .co2g(entity.getCo2Kg())
+                .co2Kg(entity.getCo2Kg())
                 .build();
     }
 }
