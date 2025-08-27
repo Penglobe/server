@@ -26,10 +26,6 @@ public class SurveyResponse extends BaseEntity {
     @Column(nullable = false)
     private Long userId;
 
-    //설문 날짜
-    @Column(nullable = false)
-    private LocalDate surveyDate;
-
     //최종 탄소배출량
     @Column(nullable = false)
     private Double totalCo2;
