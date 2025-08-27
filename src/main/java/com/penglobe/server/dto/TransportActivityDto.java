@@ -4,6 +4,7 @@ import com.penglobe.server.domain.transport.TransportActivity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter @Setter
@@ -29,8 +30,8 @@ public class TransportActivityDto {
     @Schema(description = "이동 거리 (미터)", example = "1200")
     private int distanceM;
 
-    @Schema(description = "절감된 CO2 배출량 (그램)", example = "168")
-    private int co2Kg;
+    @Schema(description = "절감된 CO2 배출량 (kg)", example = "1.68")
+    private BigDecimal co2Kg;
 
     // Factory Method: Entity -> DTO
     public static TransportActivityDto fromEntity(TransportActivity entity) {
