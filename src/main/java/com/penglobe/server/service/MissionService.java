@@ -1,0 +1,154 @@
+package com.penglobe.server.service;
+
+import com.penglobe.server.domain.ledger.LedgerReason;
+import com.penglobe.server.domain.ledger.PointsLedger;
+import com.penglobe.server.domain.mission.MissionClaim;
+import com.penglobe.server.domain.mission.MissionDefinition;
+import com.penglobe.server.domain.mission.MissionMetric;
+import com.penglobe.server.domain.user.User;
+import com.penglobe.server.domain.user.UserCounters;
+import com.penglobe.server.dto.MissionSlotDTO;
+import com.penglobe.server.repository.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class MissionService {
+
+    private final MissionDefinitionRepository defRepo;
+    private final MissionClaimRepository claimRepo;
+    private final UserCountersRepository countersRepo;
+    private final UserRepository userRepo;
+    private final PointsLedgerRepository pointsLedgerRepo;
+
+    /** 10kg/10일 -> 100포인트, 20 -> 200포인트 ... */
+    private int rewardOf(long target) {
+        return Math.toIntExact(target * 10L);
+    }
+
+    private long progressOf(UserCounters c, MissionMetric m) {
+        return switch (m) {
+            case WALK_CO2_KG       -> c.getTotalDistanceCo2Kg();
+            case DIET_CO2_KG       -> c.getTotalDietCo2Kg();
+            case ATTEND_TOTAL_DAYS -> c.getAttendanceTotalDays();
+        };
+    }
+
+    /** 단일 metric의 4칸 윈도우 (앵커 = 마지막 수령 타겟, 없으면 startTarget) */
+    @Transactional(readOnly = true)
+    public List<MissionSlotDTO> getWindow(Long userId, MissionMetric metric) {
+        UserCounters counters = countersRepo.findById(userId).orElseThrow();
+        MissionDefinition def = defRepo.findByMetric(metric);
+
+        long progress = progressOf(counters, metric);
+        long start    = def.getStartTarget();
+        long step     = def.getStep();
+
+        Long maxClaimed = claimRepo.findMaxClaimedTarget(userId, metric);
+        long anchor = (maxClaimed == null) ? start : Math.max(start, maxClaimed);
+        long expected = (maxClaimed == null) ? start : (maxClaimed + step);
+
+        Set<Long> claimedTargets = claimRepo.findByUserIdAndMetric(userId, metric)
+                .stream().map(MissionClaim::getTarget).collect(Collectors.toSet());
+
+        List<MissionSlotDTO> list = new ArrayList<>(4);
+        for (int i = 0; i < 4; i++) {
+            long target = anchor + (i * step);  // 10~40 → (40 수령 후) 40~70
+            boolean achieved = progress >= target;
+            boolean claimed  = claimedTargets.contains(target);
+            boolean claimable = achieved && !claimed && (target == expected);
+            boolean locked    = !achieved;
+
+            list.add(MissionSlotDTO.builder()
+                    .metric(metric)
+                    .target(target)
+                    .progress(progress)
+                    .rewardPoints(rewardOf(target))
+                    .locked(locked)
+                    .claimable(claimable)
+                    .claimed(claimed)
+                    .build());
+        }
+        return list;
+    }
+
+    /** 3개 metric 모두 반환 */
+    @Transactional(readOnly = true)
+    public Map<MissionMetric, List<MissionSlotDTO>> getWindows(Long userId) {
+        Map<MissionMetric, List<MissionSlotDTO>> res = new EnumMap<>(MissionMetric.class);
+        for (MissionMetric m : MissionMetric.values()) {
+            res.put(m, getWindow(userId, m));
+        }
+        return res;
+    }
+
+    /** 수령 (중복/동시성: UNIQUE(user, metric, target)로 멱등 보장) */
+    @Transactional
+    public void claim(Long userId, MissionMetric metric, long target) {
+        UserCounters counters = countersRepo.findById(userId).orElseThrow();
+
+        // 정의 조회 및 타겟 유효성 검증
+        MissionDefinition def = defRepo.findByMetric(metric);
+        long start = def.getStartTarget();
+        long step  = def.getStep();
+
+        if (target < start || (target - start) % step != 0) {
+            throw new IllegalArgumentException("유효하지 않은 목표치입니다."); // 등차수열 밖
+        }
+
+        // 연속 수령 강제
+        Long max = claimRepo.findMaxClaimedTarget(userId, metric);
+        long expected = (max == null) ? start : (max + step);
+        if (target != expected) {
+            throw new IllegalArgumentException("이전 단계를 먼저 수령해 주세요."); // 바로 다음 칸만 허용
+        }
+
+        // 기존 진행도 검증
+        long progress = progressOf(counters, metric);
+
+        if (progress < target) throw new IllegalArgumentException("아직 목표치에 도달하지 않았습니다.");
+
+        try {
+            MissionClaim claim = claimRepo.save(
+                    MissionClaim.builder()
+                            .userId(userId)
+                            .metric(metric)
+                            .target(target)
+                            .build()
+            );
+
+            int reward = rewardOf(target);
+
+            // 포인트 지급 연동 추가해야함
+            User user = userRepo.findById(userId).orElseThrow();
+            int newBalance = user.getTotalPoint() + reward;
+
+            pointsLedgerRepo.save(
+                    PointsLedger.builder()
+                            .user(user)
+                            .eventDate(LocalDate.now())        // 레저는 LocalDate 기준
+                            .changeAmount(reward)               // +포인트
+                            .balanceAfter(newBalance)           // 적립 후 잔액
+                            .reason(LedgerReason.MISSION_REWARD) // 사유(레저 enum)
+                            .refTable("mission_claims")         // 중복방지 키용 참조
+                            .refId(claim.getId())
+                            .metadataJson("{\"metric\":\"" + metric + "\",\"target\":" + target + "}")
+                            .build()
+            );
+
+            user.setTotalPoint(newBalance); // 보유 포인트 갱신
+            // pointsService.add(userId, def.getRewardPoints(), "MISSION_CLAIM", metric + ":" + target);
+
+        } catch (DataIntegrityViolationException ignore) {
+            // 이미 수령됨 → 멱등 처리
+        }
+    }
+}
+
