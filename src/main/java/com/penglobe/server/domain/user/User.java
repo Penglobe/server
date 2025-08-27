@@ -5,6 +5,8 @@ import com.penglobe.server.domain.user.UserType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "users")
 @Getter @Setter
@@ -45,4 +47,10 @@ public class User extends BaseEntity {
     @Builder.Default
     @Column(name = "is_profile_complete", nullable = false)
     private Boolean isProfileComplete = false;
+
+    @Column(name = "last_week_rank")
+    private Integer lastWeekRank; // 지난 주 최종 랭킹
+
+    @Column(name = "weekly_ranking_group_id")
+    private String weeklyRankingGroupId; // 이번 주에 속한 랭킹 그룹의 고유 id
 }
