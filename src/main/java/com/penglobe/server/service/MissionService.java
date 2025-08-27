@@ -14,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,11 +34,11 @@ public class MissionService {
         return Math.toIntExact(target * 10L);
     }
 
-    private long progressOf(UserCounters c, MissionMetric m) {
+    private BigDecimal progressOf(UserCounters c, MissionMetric m) {
         return switch (m) {
             case WALK_CO2_KG       -> c.getTotalDistanceCo2Kg();
             case DIET_CO2_KG       -> c.getTotalDietCo2Kg();
-            case ATTEND_TOTAL_DAYS -> c.getAttendanceTotalDays();
+            case ATTEND_TOTAL_DAYS -> BigDecimal.valueOf(c.getAttendanceTotalDays());
         };
     }
 
@@ -47,7 +48,7 @@ public class MissionService {
         UserCounters counters = countersRepo.findById(userId).orElseThrow();
         MissionDefinition def = defRepo.findByMetric(metric);
 
-        long progress = progressOf(counters, metric);
+        BigDecimal  progress = progressOf(counters, metric);
         long start    = def.getStartTarget();
         long step     = def.getStep();
 
@@ -61,7 +62,7 @@ public class MissionService {
         List<MissionSlotDTO> list = new ArrayList<>(4);
         for (int i = 0; i < 4; i++) {
             long target = anchor + (i * step);  // 10~40 → (40 수령 후) 40~70
-            boolean achieved = progress >= target;
+            boolean achieved = progress.compareTo(BigDecimal.valueOf(target)) >= 0;
             boolean claimed  = claimedTargets.contains(target);
             boolean claimable = achieved && !claimed && (target == expected);
             boolean locked    = !achieved;
@@ -94,13 +95,22 @@ public class MissionService {
     public void claim(Long userId, MissionMetric metric, long target) {
         UserCounters counters = countersRepo.findById(userId).orElseThrow();
 
-        // 정의 조회 및 타겟 유효성 검증
         MissionDefinition def = defRepo.findByMetric(metric);
         long start = def.getStartTarget();
         long step  = def.getStep();
 
+        // 정의 조회 및 타겟 유효성 검증
         if (target < start || (target - start) % step != 0) {
             throw new IllegalArgumentException("유효하지 않은 목표치입니다."); // 등차수열 밖
+        }
+
+        // 기존 진행도 검증
+        BigDecimal progress = progressOf(counters, metric);
+        if (progress.compareTo(BigDecimal.valueOf(target)) < 0) throw new IllegalArgumentException("아직 목표치에 도달하지 않았습니다.");
+
+        // 이미 수령한 타겟(멱등) → 조용히 성공 처리
+        if (claimRepo.existsByUserIdAndMetricAndTarget(userId, metric, target)) {
+            return; // 멱등: 200 OK, 추가 변화 없음
         }
 
         // 연속 수령 강제
@@ -109,11 +119,6 @@ public class MissionService {
         if (target != expected) {
             throw new IllegalArgumentException("이전 단계를 먼저 수령해 주세요."); // 바로 다음 칸만 허용
         }
-
-        // 기존 진행도 검증
-        long progress = progressOf(counters, metric);
-
-        if (progress < target) throw new IllegalArgumentException("아직 목표치에 도달하지 않았습니다.");
 
         try {
             MissionClaim claim = claimRepo.save(
