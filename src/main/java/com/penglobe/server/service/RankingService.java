@@ -14,6 +14,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.math.BigDecimal; // Added import
 
 @Service
 @RequiredArgsConstructor
@@ -135,7 +136,7 @@ public class RankingService {
                     user.getId(),
                     user.getNickname(),
                     rank,
-                    entry.getValue().doubleValue(),
+                    java.math.BigDecimal.valueOf(entry.getValue()), // Convert Long to BigDecimal
                     user.getId().equals(currentUserId)
             ));
         }
@@ -146,5 +147,25 @@ public class RankingService {
         long transportCo2 = transportActivityRepository.sumCo2KgByUserIdAndTakenOnBetween(userId, startDate, endDate).orElse(0L);
         long dietCo2 = dietRecordRepository.sumCo2KgByUserIdAndTakenOnBetween(userId, startDate, endDate).orElse(0L);
         return transportCo2 + dietCo2;
+    }
+
+    /**
+     * 전체 사용자의 누적 총 절감량을 기준으로 순위를 조회합니다.
+     *
+     * @return 순위가 포함된 RankedUserDTO 리스트
+     */
+    public List<RankedUserDTO> getOverallRanking() {
+        List<RankedUserDTO> rankedUsers = userRepository.findAllUsersWithTotalSavingsForRanking();
+
+        // 순위 로직 적용
+        int rank = 1;
+        for (int i = 0; i < rankedUsers.size(); i++) {
+            // BigDecimal 비교는 compareTo() 사용
+            if (i > 0 && rankedUsers.get(i).getTotalCo2Saved().compareTo(rankedUsers.get(i - 1).getTotalCo2Saved()) != 0) {
+                rank = i + 1;
+            }
+            rankedUsers.get(i).setRank(rank);
+        }
+        return rankedUsers;
     }
 }
