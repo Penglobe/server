@@ -30,11 +30,6 @@ public class SurveyOption extends BaseEntity {
     @Column(nullable = false)
     private Integer value;
 
-    //선택지 설명
-    //보류
-    @Column(nullable = false, length = 100)
-    private String description;
-
     //선택지에 해당하는 co2
     @Column(nullable = false)
     private Double co2;

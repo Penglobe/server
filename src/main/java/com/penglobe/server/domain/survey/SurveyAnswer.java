@@ -33,4 +33,5 @@ public class SurveyAnswer extends BaseEntity {
     //선택값 기반 co2
     @Column(nullable = false)
     private Double co2;
+
 }
