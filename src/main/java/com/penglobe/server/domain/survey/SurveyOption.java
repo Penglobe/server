@@ -32,5 +32,5 @@ public class SurveyOption extends BaseEntity {
 
     //선택지에 해당하는 co2
     @Column(nullable = false)
-    private Double co2;
+    private Double co2kg;
 }
