@@ -13,12 +13,14 @@ public class RegionDTO {
     private String regionName; // 지역 이름
     private BigDecimal totalSaving; // 총 절감량
 
-    // JPQL 조회를 위한 생성자 (임시: int 타입 확인용)
-    public RegionDTO(Integer regionId, String regionName, int totalSaving) {
+    // JPQL 조회를 위한 생성자
+    public RegionDTO(Integer regionId, String regionName, BigDecimal totalSaving) {
         this.regionId = regionId;
         this.regionName = regionName;
-        this.totalSaving = BigDecimal.valueOf(totalSaving); // Convert int to BigDecimal
-        // No null check needed for primitive int
+        this.totalSaving = totalSaving;
+        if (this.totalSaving == null) {
+            this.totalSaving = BigDecimal.ZERO;
+        }
     }
 
 }
