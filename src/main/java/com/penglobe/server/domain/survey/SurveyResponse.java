@@ -28,7 +28,7 @@ public class SurveyResponse extends BaseEntity {
 
     //최종 탄소배출량
     @Column(nullable = false)
-    private Double totalCo2;
+    private Double totalCo2kg;
 
     @Column(nullable = false)
     private LocalDate surveyDate;
