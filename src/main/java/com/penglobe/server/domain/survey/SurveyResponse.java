@@ -9,12 +9,15 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name="survey_response")
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+//최종 탄소배출량
 public class SurveyResponse extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,9 +26,14 @@ public class SurveyResponse extends BaseEntity {
     @Column(nullable = false)
     private Long userId;
 
+    //설문 날짜
     @Column(nullable = false)
-    private LocalDate surveyDate; //설문 날짜
+    private LocalDate surveyDate;
 
+    //최종 탄소배출량
     @Column(nullable = false)
-    private Double totalCo2; //최종 탄소배출량
+    private Double totalCo2;
+
+    @OneToMany(mappedBy = "surveyResponse", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SurveyAnswer> answers = new ArrayList<>();
 }
