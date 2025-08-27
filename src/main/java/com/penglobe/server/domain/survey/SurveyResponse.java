@@ -30,6 +30,9 @@ public class SurveyResponse extends BaseEntity {
     @Column(nullable = false)
     private Double totalCo2;
 
+    @Column(nullable = false)
+    private LocalDate surveyDate;
+
     @OneToMany(mappedBy = "surveyResponse", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SurveyAnswer> answers = new ArrayList<>();
 }
