@@ -9,6 +9,7 @@ import org.yaml.snakeyaml.DumperOptions;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TopCo2DTO {
+    private Double relativeScore; //top3 선정 용 상대점수
     private Double co2;
     private String code;
 }
