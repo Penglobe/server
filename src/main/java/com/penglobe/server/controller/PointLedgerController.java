@@ -35,10 +35,8 @@ public class PointLedgerController {
             summary = "거래 내역 조회", description = "기간별 사용자 포인트 거래 내역 조회입니다. (기간을 설정하지 않으면 기본적으로 이번 달 내역을 조회합니다.)"
     )
     @GetMapping("/ledger/{userId}")
-    public ResponseEntity<ApiResponse<PointLedgerResponse>> getPointLedger(@PathVariable Long userId,
-                                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to ) {
-        List<PointDTO> points = pointLedgerService.getUserPointList(userId, from, to);
+    public ResponseEntity<ApiResponse<PointLedgerResponse>> getPointLedger(@PathVariable Long userId){
+        List<PointDTO> points = pointLedgerService.getUserPointList(userId);
         PointLedgerResponse response = new PointLedgerResponse(points, points.size());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
