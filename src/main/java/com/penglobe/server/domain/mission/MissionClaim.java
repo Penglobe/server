@@ -8,17 +8,19 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "mission_claims",
-        uniqueConstraints = @UniqueConstraint(
+        uniqueConstraints = {@UniqueConstraint(
                 name = "uk_claim_user_metric_target",
-                columnNames = {"user_id","metric","target"} // ← DB 컬럼명
-        )
-)
+                columnNames = {"user_id", "metric", "target"}),
+                @UniqueConstraint(
+                        name = "uk_claim_user_metric_period",
+                        columnNames = {"user_id", "metric", "period_month"})
+        })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class MissionClaim extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long missionClaimsId;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
@@ -31,12 +33,7 @@ public class MissionClaim extends BaseEntity {
     @Column(nullable = false)
     private Long target;
 
-    @Column(nullable = false)
-    private LocalDateTime claimedAt;
-
-    @PrePersist
-    void prePersist() {
-        if (claimedAt == null) claimedAt = LocalDateTime.now();
-    }
+    @Column(name = "period_month", length = 7) // "YYYY-MM"
+    private String periodMonth;                // 월간 미션용(출석)
 }
 

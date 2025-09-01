@@ -15,7 +15,7 @@ public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long userId;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
@@ -31,8 +31,8 @@ public class User extends BaseEntity {
     @Column(length = 50)
     private String nickname;
 
-    @Column(name = "home_region_id")
-    private Integer homeRegionId;
+    @Column(name = "region_id")
+    private Integer regionId;
 
     @Builder.Default
     @Column(name = "total_point", nullable = false)
@@ -50,7 +50,4 @@ public class User extends BaseEntity {
 
     @Column(name = "last_week_rank")
     private Integer lastWeekRank; // 지난 주 최종 랭킹
-
-    @Column(name = "weekly_ranking_group_id")
-    private String weeklyRankingGroupId; // 이번 주에 속한 랭킹 그룹의 고유 id
 }

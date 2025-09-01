@@ -17,20 +17,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     boolean existsByKakaoId(Long kakaoId);
 
-    /**
-     * 주어진 주간 랭킹 그룹 ID에 속한 모든 사용자를 조회합니다.
-     * @param weeklyRankingGroupId 주간 랭킹 그룹 ID
-     * @return 사용자 리스트
-     */
-    List<User> findByWeeklyRankingGroupId(String weeklyRankingGroupId);
-
     @Query("""
     select new com.penglobe.server.dto.RankedUserDTO(
-        u.id, u.nickname, 0, CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal), false
+        u.userId, u.nickname, 0, CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal), false
     )
     from User u
-    join UserCounters uc ON uc.userId = u.id
-    group by u.id, u.nickname
+    join UserCounters uc ON uc.userId = u.userId
+    group by u.userId, u.nickname
     order by CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal) DESC
     """)
     List<RankedUserDTO> findAllUsersWithTotalSavingsForRanking();
