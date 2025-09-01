@@ -24,12 +24,14 @@ public class PointLedgerService {
     @Autowired
     private UserRepository userRepository;
 
-    public List<PointDTO> getUserPointList(Long userId, LocalDate from, LocalDate to) {
+    public List<PointDTO> getUserPointList(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 사용자입니다."));
 
         List<PointsLedger> pointlist =
                 pointsLedgerRepository.findByUserOrderByCreatedAtDesc(user);
+
+
 
         return pointlist.stream()
                 .map(l -> new PointDTO(

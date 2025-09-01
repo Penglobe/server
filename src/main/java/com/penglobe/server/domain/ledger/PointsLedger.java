@@ -16,6 +16,7 @@ import java.util.Collection;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Setter
 public class PointsLedger extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
