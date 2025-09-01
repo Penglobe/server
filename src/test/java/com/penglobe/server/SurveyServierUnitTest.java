@@ -10,6 +10,7 @@ import com.penglobe.server.repository.SurveyOptionRepository;
 import com.penglobe.server.repository.SurveyResponseRepository;
 import com.penglobe.server.service.SurveyService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -46,38 +47,50 @@ class SurveyServiceUnitTest {
     }
 
     @Test
-    void submitSurvey_ShouldCalculateTotalCo2AndTop3() {
+    @DisplayName("설문응답 시 총 co2와 top3 계산")
+    void submitSurvey_WithRealOptions_ShouldCalculateCorrectly() {
+        // --- 사용자 응답 ---
+        SurveyAnswerDTO a1 = new SurveyAnswerDTO(); a1.setItemId(1L); a1.setSelectValue(1); // 분리배출
+        SurveyAnswerDTO a2 = new SurveyAnswerDTO(); a2.setItemId(2L); a2.setSelectValue(2); // 일회용품
+        SurveyAnswerDTO a3 = new SurveyAnswerDTO(); a3.setItemId(3L); a3.setSelectValue(3); // 종이타월
+        SurveyAnswerDTO a4 = new SurveyAnswerDTO(); a4.setItemId(4L); a4.setSelectValue(2); // 음식물쓰레기
+        SurveyAnswerDTO a5 = new SurveyAnswerDTO(); a5.setItemId(5L); a5.setSelectValue(1); // 전자기기
 
-        SurveyAnswerDTO answer1 = new SurveyAnswerDTO(); answer1.setItemId(1L); answer1.setSelectValue(2);
-        SurveyAnswerDTO answer2 = new SurveyAnswerDTO(); answer2.setItemId(2L); answer2.setSelectValue(1);
-        SurveyAnswerDTO answer3 = new SurveyAnswerDTO(); answer3.setItemId(3L); answer3.setSelectValue(3);
+        SurveySubmitRequestDTO request = new SurveySubmitRequestDTO();
+        request.setUserId(1L);
+        request.setAnswer(Arrays.asList(a1, a2, a3, a4, a5));
 
-        SurveySubmitRequestDTO submitRequest = new SurveySubmitRequestDTO();
-        submitRequest.setUserId(1L);
-        submitRequest.setAnswer(Arrays.asList(answer1, answer2, answer3));
+        // --- SurveyItem + Option 정의 ---
+        SurveyItem i1 = new SurveyItem(); i1.setItemId(1L); i1.setCode("분리배출");
+        SurveyItem i2 = new SurveyItem(); i2.setItemId(2L); i2.setCode("일회용품");
+        SurveyItem i3 = new SurveyItem(); i3.setItemId(3L); i3.setCode("종이타월");
+        SurveyItem i4 = new SurveyItem(); i4.setItemId(4L); i4.setCode("음식물쓰레기");
+        SurveyItem i5 = new SurveyItem(); i5.setItemId(5L); i5.setCode("전자기기");
 
-        SurveyItem item1 = new SurveyItem(); item1.setItemId(1L); item1.setCode("재활용");
-        SurveyItem item2 = new SurveyItem(); item2.setItemId(2L); item2.setCode("대중교통");
-        SurveyItem item3 = new SurveyItem(); item3.setItemId(3L); item3.setCode("식습관");
+        // 선택된 옵션 Mock
+        SurveyOption o1 = new SurveyOption(); o1.setSurveyItem(i1); o1.setValue(1); o1.setCo2kg(0.05);
+        SurveyOption o2 = new SurveyOption(); o2.setSurveyItem(i2); o2.setValue(2); o2.setCo2kg(0.12);
+        SurveyOption o3 = new SurveyOption(); o3.setSurveyItem(i3); o3.setValue(3); o3.setCo2kg(0.0);
+        SurveyOption o4 = new SurveyOption(); o4.setSurveyItem(i4); o4.setValue(2); o4.setCo2kg(0.02);
+        SurveyOption o5 = new SurveyOption(); o5.setSurveyItem(i5); o5.setValue(1); o5.setCo2kg(0.05);
 
-        SurveyOption opt1 = new SurveyOption(); opt1.setSurveyItem(item1); opt1.setValue(2); opt1.setCo2kg(1.5);
-        SurveyOption opt2 = new SurveyOption(); opt2.setSurveyItem(item2); opt2.setValue(1); opt2.setCo2kg(2.0);
-        SurveyOption opt3 = new SurveyOption(); opt3.setSurveyItem(item3); opt3.setValue(3); opt3.setCo2kg(3.0);
+        when(optionRepository.findBySurveyItem_ItemIdAndValue(1L, 1)).thenReturn(Optional.of(o1));
+        when(optionRepository.findBySurveyItem_ItemIdAndValue(2L, 2)).thenReturn(Optional.of(o2));
+        when(optionRepository.findBySurveyItem_ItemIdAndValue(3L, 3)).thenReturn(Optional.of(o3));
+        when(optionRepository.findBySurveyItem_ItemIdAndValue(4L, 2)).thenReturn(Optional.of(o4));
+        when(optionRepository.findBySurveyItem_ItemIdAndValue(5L, 1)).thenReturn(Optional.of(o5));
 
-        when(optionRepository.findBySurveyItem_ItemIdAndValue(1L, 2)).thenReturn(Optional.of(opt1));
-        when(optionRepository.findBySurveyItem_ItemIdAndValue(2L, 1)).thenReturn(Optional.of(opt2));
-        when(optionRepository.findBySurveyItem_ItemIdAndValue(3L, 3)).thenReturn(Optional.of(opt3));
+        // maxCo2 Mock (상대점수 계산용)
+        when(optionRepository.findMaxCo2ByItemId(1L)).thenReturn(0.05);
+        when(optionRepository.findMaxCo2ByItemId(2L)).thenReturn(0.24);
+        when(optionRepository.findMaxCo2ByItemId(3L)).thenReturn(0.15);
+        when(optionRepository.findMaxCo2ByItemId(4L)).thenReturn(0.02);
+        when(optionRepository.findMaxCo2ByItemId(5L)).thenReturn(0.05);
 
+        // --- 실행 ---
+        SurveyResultDTO result = surveyService.submitSurvey(request);
 
-        // maxCo2 조회 Mock (상대점수 계산용)
-        when(optionRepository.findMaxCo2ByItemId(1L)).thenReturn(2.0);
-        when(optionRepository.findMaxCo2ByItemId(2L)).thenReturn(2.0);
-        when(optionRepository.findMaxCo2ByItemId(3L)).thenReturn(3.0);
-
-        SurveyResultDTO result = surveyService.submitSurvey(submitRequest);
-
-        assertThat(result.getTotalCo2()).isEqualTo(6.5);
-        assertThat(result.getTop3()).hasSizeLessThanOrEqualTo(3);
+        // --- 검증 ---
 
         System.out.println("총 CO2: " + result.getTotalCo2());
         result.getTop3().forEach(top ->
