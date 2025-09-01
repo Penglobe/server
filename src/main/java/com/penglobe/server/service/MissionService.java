@@ -162,13 +162,8 @@ public class MissionService {
             pointsLedgerRepo.save(
                     PointsLedger.builder()
                             .user(user)
-                            .eventdate(LocalDate.now())        // 레저는 LocalDate 기준
                             .changeAmount(reward)               // +포인트
-                            .balanceAfter(newBalance)           // 적립 후 잔액
                             .reason(LedgerReason.MISSION_REWARD) // 사유(레저 enum)
-                            .refTable("mission_claims")         // 중복방지 키용 참조
-                            .refId(claim.getMissionClaimsId())
-                            .metadataJson("{\"metric\":\"" + metric + "\",\"target\":" + target + "}")
                             .build()
             );
 
