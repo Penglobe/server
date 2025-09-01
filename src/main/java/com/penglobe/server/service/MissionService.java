@@ -162,7 +162,7 @@ public class MissionService {
             pointsLedgerRepo.save(
                     PointsLedger.builder()
                             .user(user)
-                            .eventDate(LocalDate.now())        // 레저는 LocalDate 기준
+                            .eventdate(LocalDate.now())        // 레저는 LocalDate 기준
                             .changeAmount(reward)               // +포인트
                             .balanceAfter(newBalance)           // 적립 후 잔액
                             .reason(LedgerReason.MISSION_REWARD) // 사유(레저 enum)
