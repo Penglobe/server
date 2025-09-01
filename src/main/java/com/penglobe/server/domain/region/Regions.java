@@ -12,7 +12,8 @@ public class Regions extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer region_id; //지역 아이디
+    @Column(name = "region_id")
+    private Integer regionId; //지역 아이디
 
     @Column(nullable = false)
     private String name; //지역 명
