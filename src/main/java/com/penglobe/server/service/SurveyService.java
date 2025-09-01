@@ -62,20 +62,20 @@ public class SurveyService {
             answer.setSurveyResponse(response);
             answer.setItemId(a.getItemId());
             answer.setSelectValues(option.getValue());
-            answer.setCo2(option.getCo2());
+            answer.setCo2kg(option.getCo2kg());
 
             //answer를 response에 추가 => 그래서 totalCo2
             response.getAnswers().add(answer);
 
             // 항목별 최대 CO₂ 조회 (상대점수 계산)
             double maxCo2 = optionRepository.findMaxCo2ByItemId(option.getSurveyItem().getItemId());
-            double relativeScore = maxCo2 == 0 ? 0 : option.getCo2() / maxCo2;
+            double relativeScore = maxCo2 == 0 ? 0 : option.getCo2kg() / maxCo2;
 
-            co2List.add(new TopCo2DTO(relativeScore, option.getCo2(), option.getSurveyItem().getCode()));
-            totalCo2 += option.getCo2();
+            co2List.add(new TopCo2DTO(relativeScore, option.getCo2kg(), option.getSurveyItem().getCode()));
+            totalCo2 += option.getCo2kg();
         }
 
-        response.setTotalCo2(totalCo2);
+        response.setTotalCo2kg(totalCo2);
         responseRepository.save(response);
 
     //상대점수 기준 Top3 선택
