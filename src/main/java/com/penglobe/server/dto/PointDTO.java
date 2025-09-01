@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PointDTO {
+public class PointDTO extends BaseEntity {
     private LocalDateTime eventDate; // PointsLedger의 BaseEntity.createdAt
     private Integer changeAmount;    // +적립 / -차감
     private LedgerReason reason;      // 사유
