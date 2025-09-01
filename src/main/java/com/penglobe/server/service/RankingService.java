@@ -2,6 +2,9 @@ package com.penglobe.server.service;
 
 import com.penglobe.server.domain.ranking.WeeklyRanking;
 import com.penglobe.server.domain.user.User;
+import com.penglobe.server.dto.ranking.MyRankingDTO;
+import com.penglobe.server.dto.ranking.RankingInfoDTO;
+import com.penglobe.server.dto.ranking.WeeklyRankingResponseDTO;
 import com.penglobe.server.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -126,5 +129,25 @@ public class RankingService {
         weeklyRankingRepository.deleteAllInBatch();
 
         System.out.println("주간 랭킹 마감 완료. 처리된 사용자 수: " + usersToUpdate.size());
+    }
+
+    /**
+     * 주간 랭킹 정보(Top 10 + 내 순위)를 조회하는 로직
+     * @param currentUserId 현재 접속한 사용자의 ID
+     * @return 주간 랭킹 응답 DTO
+     */
+    @Transactional(readOnly = true)
+    public WeeklyRankingResponseDTO getWeeklyRanking(Long currentUserId) {
+        // 1. Top 10 조회
+        List<RankingInfoDTO> top10 = weeklyRankingRepository.findTop10ByOrderByRankingAsc().stream()
+                .map(RankingInfoDTO::new)
+                .toList();
+
+        // 2. 내 순위 조회
+        MyRankingDTO myRank = weeklyRankingRepository.findByUserId(currentUserId)
+                .map(MyRankingDTO::new)
+                .orElse(null); // 랭킹에 없으면 null
+
+        return new WeeklyRankingResponseDTO(top10, myRank);
     }
 }
