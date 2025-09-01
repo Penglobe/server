@@ -10,12 +10,12 @@ import java.util.List;
 public interface RegionRepository extends JpaRepository<Regions, Integer> {
     @Query("""
     select new com.penglobe.server.dto.RegionDTO(
-    r.id, r.name, CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal)
+    r.regionId, r.name, CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal)
     )
     from Regions r
-    join User u ON u.regionId = r.id
+    join User u ON u.regionId = r.regionId
     join UserCounters uc ON uc.userId = u.userId
-    group by r.id, r.name
+    group by r.regionId, r.name
     order by CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal) DESC
 """)
     List<RegionDTO> getRegionRankings();
