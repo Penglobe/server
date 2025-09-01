@@ -46,13 +46,13 @@ public class TransportActivityController {
     }
 
     @Operation(summary = "이동 종료", description = "사용자가 이동을 종료합니다.")
-    @PostMapping("/{id}/stop")
+    @PostMapping("/{transportId}/stop")
     public ResponseEntity<ApiResponse<TransportActivityDto>> stop(
-            @PathVariable Long id,
+            @PathVariable Long transportId,
             @RequestParam int distanceM,
             @RequestBody(required = false) String pathGeojson
     ) {
-        TransportActivity activity = activityService.stopActivity(id, distanceM, pathGeojson);
+        TransportActivity activity = activityService.stopActivity(transportId, distanceM, pathGeojson);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -85,21 +85,21 @@ public class TransportActivityController {
     }
 
     @Operation(summary = "북마크 수정")
-    @PutMapping("/bookmarks/{id}")
+    @PutMapping("/bookmarks/{bookmarkId}")
     public ResponseEntity<ApiResponse<BookmarkDto>> updateBookmark(
-            @PathVariable Long id,
+            @PathVariable Long bookmarkId,
             @RequestBody BookmarkDto dto
     ) {
-        UserPlaceBookmark b = bookmarkService.update(id, dto);
+        UserPlaceBookmark b = bookmarkService.update(bookmarkId, dto);
         return ResponseEntity.ok(ApiResponse.success(200, "북마크 수정 성공", BookmarkDto.fromEntity(b)));
     }
 
     @Operation(summary = "북마크 삭제")
-    @DeleteMapping("/bookmarks/{id}")
+    @DeleteMapping("/bookmarks/{bookmarkId}")
     public ResponseEntity<ApiResponse<Void>> deleteBookmark(
-            @PathVariable Long id
+            @PathVariable Long bookmarkId
     ) {
-        bookmarkService.delete(id);
+        bookmarkService.delete(bookmarkId);
         return ResponseEntity.ok(ApiResponse.success(200, "북마크 삭제 성공", null));
     }
 }
