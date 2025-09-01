@@ -26,7 +26,6 @@ public class TransportActivityService {
                 .user(user)
                 .mode(mode)
                 .startTime(LocalDateTime.now())
-                .takenOn(LocalDate.now())
                 .distanceM(0)
                 .co2Kg(BigDecimal.ZERO)
                 .build();
@@ -36,15 +35,12 @@ public class TransportActivityService {
 
     // 이동 종료 (거리, 경로 저장, CO₂ 절감량 계산)
     @Transactional
-    public TransportActivity stopActivity(Long id, int distanceM, String pathGeojson) {
-        TransportActivity activity = activityRepository.findById(id)
+    public TransportActivity stopActivity(Long transportId, int distanceM, String pathGeojson) {
+        TransportActivity activity = activityRepository.findById(transportId)
                 .orElseThrow(() -> new IllegalArgumentException("활동을 찾을 수 없습니다."));
 
         activity.setEndTime(LocalDateTime.now());
         activity.setDistanceM(distanceM);
-        if (pathGeojson != null) {
-            activity.setPathGeojson(pathGeojson);
-        }
 
         // 🚩 CO₂ 절감량 계산 (소수점 둘째 자리 반올림)
         BigDecimal co2Kg = calculateCo2Saving(distanceM, activity.getMode());

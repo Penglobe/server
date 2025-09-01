@@ -17,7 +17,7 @@ public class UserPlaceBookmark extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long bookmarkId;
 
     // 사용자
     @ManyToOne(fetch = FetchType.LAZY)
@@ -25,7 +25,7 @@ public class UserPlaceBookmark extends BaseEntity {
     private User user;
 
     @Column(nullable = false, length = 50)
-    private String label; // 예: 집, 회사, 학교
+    private String bookmarkLabel; // 예: 집, 회사, 학교
 
     @Column(length = 255)
     private String address;
@@ -39,20 +39,4 @@ public class UserPlaceBookmark extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 7)
     private BigDecimal lng;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }
