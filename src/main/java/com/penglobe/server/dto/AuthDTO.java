@@ -38,7 +38,7 @@ public class AuthDTO {
         @NotBlank @Size(max = 50)
         public String nickname;
         @NotNull
-        public Integer homeRegionId;
+        public Integer regionId;
         public Integer profileId;
     }
 
@@ -52,7 +52,7 @@ public class AuthDTO {
 
     // ✅ 카카오 추가정보 제출용 (지역/닉네임 등)
     public static class CompleteProfileRequest {
-        @NotNull public Integer homeRegionId;      // 지역 필수
+        @NotNull public Integer regionId;      // 지역 필수
         @NotBlank @Size(max = 50) public String nickname;
         public Integer profileId;                  // 선택
     }
