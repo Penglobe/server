@@ -11,6 +11,7 @@ import java.util.Optional;
 
 public interface MissionClaimRepository extends JpaRepository<MissionClaim, Long> {
     boolean existsByUserIdAndMetricAndTarget(Long userId, MissionMetric metric, Long target);
+    boolean existsByUserIdAndMetricAndPeriodMonth(Long userId, MissionMetric metric, String periodMonth);
 
     List<MissionClaim> findByUserIdAndMetric(Long userId, MissionMetric metric);
 
