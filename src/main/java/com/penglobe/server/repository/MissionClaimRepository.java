@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MissionClaimRepository extends JpaRepository<MissionClaim, Long> {
     boolean existsByUserIdAndMetricAndTarget(Long userId, MissionMetric metric, Long target);
@@ -19,4 +20,7 @@ public interface MissionClaimRepository extends JpaRepository<MissionClaim, Long
         where c.userId = :userId and c.metric = :metric
     """)
     Long findMaxClaimedTarget(@Param("userId") Long userId, @Param("metric") MissionMetric metric);
+
+    Optional<MissionClaim> findByUserIdAndMetricAndPeriodMonth(Long userId, MissionMetric metric, String periodMonth);
+
 }

@@ -38,7 +38,7 @@ public class MissionService {
         return switch (m) {
             case WALK_CO2_KG       -> c.getTotalDistanceCo2Kg();
             case DIET_CO2_KG       -> c.getTotalDietCo2Kg();
-            case ATTEND_TOTAL_DAYS -> BigDecimal.valueOf(c.getAttendanceTotalDays());
+            case ATTEND_MONTH_DAYS -> BigDecimal.valueOf(c.getAttendanceMonthDays());
         };
     }
 
@@ -46,6 +46,30 @@ public class MissionService {
     @Transactional(readOnly = true)
     public List<MissionSlotDTO> getWindow(Long userId, MissionMetric metric) {
         UserCounters counters = countersRepo.findById(userId).orElseThrow();
+
+        //한달 출석일 미션
+        if (metric == MissionMetric.ATTEND_MONTH_DAYS) {
+            String ym = java.time.YearMonth.now().toString(); // "YYYY-MM"
+            int monthProgress = counters.getAttendanceMonthDays();
+            boolean claimed = claimRepo
+                    .findByUserIdAndMetricAndPeriodMonth(userId, metric, ym)
+                    .isPresent();
+
+            boolean achieved  = monthProgress >= 20;
+            boolean claimable = achieved && !claimed;
+
+            return List.of(MissionSlotDTO.builder()
+                    .metric(metric)
+                    .target(20)                            // 고정
+                    .progress(BigDecimal.valueOf(monthProgress))
+                    .rewardPoints(20 * 10)                 // 20일 -> 200포인트 규칙
+                    .locked(!achieved)
+                    .claimable(claimable)
+                    .claimed(claimed)
+                    .build());
+        }
+
+        //환경걸음, 식단 미션
         MissionDefinition def = defRepo.findByMetric(metric);
 
         BigDecimal  progress = progressOf(counters, metric);
@@ -143,7 +167,7 @@ public class MissionService {
                             .balanceAfter(newBalance)           // 적립 후 잔액
                             .reason(LedgerReason.MISSION_REWARD) // 사유(레저 enum)
                             .refTable("mission_claims")         // 중복방지 키용 참조
-                            .refId(claim.getId())
+                            .refId(claim.getMissionClaimsId())
                             .metadataJson("{\"metric\":\"" + metric + "\",\"target\":" + target + "}")
                             .build()
             );

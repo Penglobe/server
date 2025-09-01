@@ -36,7 +36,7 @@ public class MissionController {
         Map<MissionMetric, List<MissionSlotDTO>> ordered = new LinkedHashMap<>();
         ordered.put(WALK_CO2_KG, missionService.getWindow(userId, WALK_CO2_KG));
         ordered.put(DIET_CO2_KG, missionService.getWindow(userId, DIET_CO2_KG));
-        ordered.put(ATTEND_TOTAL_DAYS, missionService.getWindow(userId, ATTEND_TOTAL_DAYS));
+        ordered.put(ATTEND_MONTH_DAYS, missionService.getWindow(userId, ATTEND_MONTH_DAYS));
 
         return ResponseEntity
                 .status(HttpStatus.OK)
