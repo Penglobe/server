@@ -119,6 +119,44 @@ public class MissionService {
     public void claim(Long userId, MissionMetric metric, long target) {
         UserCounters counters = countersRepo.findById(userId).orElseThrow();
 
+        if (metric == MissionMetric.ATTEND_MONTH_DAYS) {
+            // 월간 출석: 이번 달 20일 이상이면 수령(월별 1회)
+            String ym = java.time.YearMonth.now().toString(); // "YYYY-MM"
+            int monthDays = counters.getAttendanceMonthDays();
+
+            if (monthDays < 20) {
+                throw new IllegalArgumentException("이번 달 출석이 20일 미만입니다.");
+            }
+
+            // 이미 이번 달 수령했으면 멱등 처리
+            if (claimRepo.existsByUserIdAndMetricAndPeriodMonth(userId, metric, ym)) {
+                return;
+            }
+
+            // 저장 (이번 달 키)
+            MissionClaim claim = claimRepo.save(
+                    MissionClaim.builder()
+                            .userId(userId)
+                            .metric(metric)
+                            .target(20L)       // 고정 20
+                            .periodMonth(ym)   // ★ 이번 달
+                            .build()
+            );
+
+            int reward = rewardOf(20L);
+            User user = userRepo.findById(userId).orElseThrow();
+            user.setTotalPoint(user.getTotalPoint() + reward);
+
+            pointsLedgerRepo.save(
+                    PointsLedger.builder()
+                            .user(user)
+                            .changeAmount(reward)
+                            .reason(LedgerReason.MISSION_REWARD)
+                            .build()
+            );
+            return;
+        }
+
         MissionDefinition def = defRepo.findByMetric(metric);
         long start = def.getStartTarget();
         long step  = def.getStep();
