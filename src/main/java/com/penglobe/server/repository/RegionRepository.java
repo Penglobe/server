@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
-import java.math.BigDecimal; // Added import
 
 public interface RegionRepository extends JpaRepository<Regions, Integer> {
     @Query("""
@@ -14,8 +13,8 @@ public interface RegionRepository extends JpaRepository<Regions, Integer> {
     r.id, r.name, CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal)
     )
     from Regions r
-    join User u ON u.homeRegionId = r.id
-    join UserCounters uc ON uc.userId = u.id
+    join User u ON u.regionId = r.id
+    join UserCounters uc ON uc.userId = u.userId
     group by r.id, r.name
     order by CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal) DESC
 """)
