@@ -16,7 +16,7 @@ public class TransportActivity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long transportId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -37,9 +37,6 @@ public class TransportActivity extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal co2Kg = BigDecimal.ZERO;
 
-    @Column(nullable = false)
-    private LocalDate takenOn;
-
-    @Lob
-    private String pathGeojson;
+//    @Lob
+//    private String pathGeojson;
 }

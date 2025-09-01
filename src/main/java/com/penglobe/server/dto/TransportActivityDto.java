@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class TransportActivityDto {
 
     @Schema(description = "활동 ID", example = "10")
-    private Long id;
+    private Long transportId;
 
     @Schema(description = "사용자 ID", example = "1")
     private Long userId;
@@ -36,7 +36,7 @@ public class TransportActivityDto {
     // Factory Method: Entity -> DTO
     public static TransportActivityDto fromEntity(TransportActivity entity) {
         return TransportActivityDto.builder()
-                .id(entity.getId())
+                .transportId(entity.getTransportId())
                 .userId(entity.getUser().getUserId())
                 .mode(entity.getMode().name())
                 .startTime(entity.getStartTime())

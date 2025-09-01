@@ -20,7 +20,7 @@ public class BookmarkService {
     public UserPlaceBookmark create(User user, BookmarkDto dto) {
         UserPlaceBookmark b = UserPlaceBookmark.builder()
                 .user(user)
-                .label(dto.getLabel())
+                .bookmarkLabel(dto.getBookmarkLabel())
                 .address(dto.getAddress())
                 .regionId(dto.getRegionId())
                 .lat(dto.getLat())
@@ -41,7 +41,7 @@ public class BookmarkService {
     @Transactional
     public UserPlaceBookmark update(Long id, BookmarkDto dto) {
         UserPlaceBookmark b = get(id);
-        b.setLabel(dto.getLabel());
+        b.setBookmarkLabel(dto.getBookmarkLabel());
         b.setAddress(dto.getAddress());
         b.setRegionId(dto.getRegionId());
         b.setLat(dto.getLat());
