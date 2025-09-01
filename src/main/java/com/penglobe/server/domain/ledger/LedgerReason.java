@@ -4,10 +4,8 @@ public enum LedgerReason {
     WALK_ACTIVITY,
     DIET_DAILY_SUCCESS,
     ATTENDANCE,
-    QUIZ_CORRECT,
+    QUIZ,
     MISSION_REWARD,
-    MILESTONE_REWARD,
     SHOP_PURCHASE,
-    ADMIN_ADJUST,
     OTHER
 }

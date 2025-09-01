@@ -6,47 +6,30 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.util.Collection;
-
 @Entity
-@Table(
-        name = "points_ledger",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        columnNames = {"user_id", "reason", "ref_table", "ref_id"}
-                )
-        }
-)
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
-public class PointsLedger extends BaseEntity {
-
+@Table(name = "point_ledger",
+        indexes = {
+                @Index(name = "idx_point_ledger_user_id", columnList = "user_id"),
+                @Index(name = "idx_point_ledger_reason", columnList = "reason")
+        })
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PointsLedger extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "point_id")
+    private Long pointId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User user;  // FK → users.id
 
-    @Column(nullable = false)
-    private LocalDate eventDate;
-
-    @Column(nullable = false)
-    private Integer changeAmount;
+    @Column(name = "change_amount", nullable = false)
+    private Integer changeAmount;  // +적립 / -차감
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "reason", nullable = false, length = 30)
     private LedgerReason reason;
-
-    @Column(name = "ref_table", length = 50)
-    private String refTable;
-
-    @Column(name = "ref_id")
-    private Long refId;
-
-    @Column(nullable = false)
-    private Integer balanceAfter;
-
-    @Lob
-    private String metadataJson;
 }
