@@ -10,4 +10,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface UserCountersRepository extends JpaRepository<UserCounters, Long> {
+    @Query("SELECT uc.user FROM UserCounters uc WHERE uc.lastAttendanceDate >= :sevenDaysAgo")
+    List<User> findUsersActiveSince(@Param("sevenDaysAgo") LocalDate sevenDaysAgo);
 }
