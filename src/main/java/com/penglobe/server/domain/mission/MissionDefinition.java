@@ -17,11 +17,7 @@ public class MissionDefinition extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    /** 사람이 읽기 쉬운 코드 (예: WALK, DIET, ATTEND) */
-    @Column(length = 32)
-    private String code;
+    private Long missionId;
 
     /** 미션 종류 (걷기/식단=kg, 출석=days) */
     @Enumerated(EnumType.STRING)
@@ -40,12 +36,5 @@ public class MissionDefinition extends BaseEntity {
     @Column(nullable = false)
     private Integer rewardPoints;
 
-    /** 제목/설명(표시용) */
-    @Column(length = 100)
-    private String title;
-
-    @Lob
-    @Column(columnDefinition = "TEXT")
-    private String description;
 }
 
