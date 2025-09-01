@@ -20,18 +20,13 @@ public class QuizQuestions extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "quiz_id", nullable = false, updatable = false)
+    private Long quizId;
 
-    //문제
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "question", nullable = false, columnDefinition = "TEXT")
     private String question;
 
-    //정답 O=1, X=0
     @Column(name = "is_answer_true", nullable = false)
     private Boolean isAnswerTrue;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
-    private User createdBy;
     
 }
