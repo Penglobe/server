@@ -60,9 +60,9 @@ class SurveyServiceUnitTest {
         SurveyItem item2 = new SurveyItem(); item2.setItemId(2L); item2.setCode("대중교통");
         SurveyItem item3 = new SurveyItem(); item3.setItemId(3L); item3.setCode("식습관");
 
-        SurveyOption opt1 = new SurveyOption(); opt1.setSurveyItem(item1); opt1.setValue(2); opt1.setCo2(1.5);
-        SurveyOption opt2 = new SurveyOption(); opt2.setSurveyItem(item2); opt2.setValue(1); opt2.setCo2(2.0);
-        SurveyOption opt3 = new SurveyOption(); opt3.setSurveyItem(item3); opt3.setValue(3); opt3.setCo2(3.0);
+        SurveyOption opt1 = new SurveyOption(); opt1.setSurveyItem(item1); opt1.setValue(2); opt1.setCo2kg(1.5);
+        SurveyOption opt2 = new SurveyOption(); opt2.setSurveyItem(item2); opt2.setValue(1); opt2.setCo2kg(2.0);
+        SurveyOption opt3 = new SurveyOption(); opt3.setSurveyItem(item3); opt3.setValue(3); opt3.setCo2kg(3.0);
 
         when(optionRepository.findBySurveyItem_ItemIdAndValue(1L, 2)).thenReturn(Optional.of(opt1));
         when(optionRepository.findBySurveyItem_ItemIdAndValue(2L, 1)).thenReturn(Optional.of(opt2));
