@@ -28,15 +28,8 @@ public class PointLedgerService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 사용자입니다."));
 
-        // 날짜 범위 기본값: 이번 달
-        if (from == null || to == null) {
-            LocalDate now = LocalDate.now();
-            from = now.withDayOfMonth(1);
-            to = now;
-        }
-
         List<PointsLedger> pointlist =
-                pointsLedgerRepository.findByUserAndEventDateBetweenOrderByEventDateDesc(user, from, to);
+                pointsLedgerRepository.findByUserOrderByCreatedAtDesc(user);
 
         return pointlist.stream()
                 .map(l -> new PointDTO(
@@ -53,7 +46,7 @@ public class PointLedgerService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 사용자입니다."));
 
-        PointsLedger latest = pointsLedgerRepository.findTopByUserOrderByEventDateDesc(user);
+        PointsLedger latest = pointsLedgerRepository.findTopByUserOrderByCreatedAtDesc(user);
         Integer balance = latest != null ? latest.getUser().getTotalPoint() : 0;
 
         return new BalanceDTO(balance);
