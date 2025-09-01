@@ -46,8 +46,8 @@ public class AuthService {
             return userRepository.save(u);
         });
 
-        String jwt = jwtTokenProvider.createToken(user.getId(), "USER");
-        return new AuthResponse(jwt, Boolean.TRUE.equals(user.getIsProfileComplete()), user.getId());
+        String jwt = jwtTokenProvider.createToken(user.getUserId(), "USER");
+        return new AuthResponse(jwt, Boolean.TRUE.equals(user.getIsProfileComplete()), user.getUserId());
     }
 
     //자체 회원가입
@@ -59,7 +59,7 @@ public class AuthService {
                 .email(req.email)
                 .passwordHash(passwordEncoder.encode(req.password))
                 .nickname(req.nickname)
-                .homeRegionId(req.homeRegionId)
+                .regionId(req.homeRegionId)
                 .profileId(req.profileId)
                 .isProfileComplete(true)
                 .build();
@@ -73,14 +73,14 @@ public class AuthService {
         if (user.getPasswordHash() == null || !passwordEncoder.matches(req.password, user.getPasswordHash())) {
             throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
-        String jwt = jwtTokenProvider.createToken(user.getId(), "USER");
-        return new AuthResponse(jwt, Boolean.TRUE.equals(user.getIsProfileComplete()), user.getId());
+        String jwt = jwtTokenProvider.createToken(user.getUserId(), "USER");
+        return new AuthResponse(jwt, Boolean.TRUE.equals(user.getIsProfileComplete()), user.getUserId());
     }
 
     // 카카오용 프로필 완료 API: 지역/닉네임 받아 complete=true
     public void completeProfile(long userId, CompleteProfileRequest req) {
         User u = userRepository.findById(userId).orElseThrow();
-        u.setHomeRegionId(req.homeRegionId);
+        u.setRegionId(req.homeRegionId);
         u.setNickname(req.nickname);
         if (req.profileId != null) u.setProfileId(req.profileId);
         u.setIsProfileComplete(true);

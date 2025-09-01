@@ -45,7 +45,10 @@ public class UserCounters extends BaseEntity {
     @Builder.Default
     private Integer attendanceStreakDays = 0;
 
+    /** 이번달 출석 일수 */
+    @Builder.Default
+    private Integer attendanceMonthDays = 0;
+
     /** 마지막 출석 날짜 */
     private LocalDate lastAttendanceDate;
-
 }

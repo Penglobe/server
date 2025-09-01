@@ -37,7 +37,7 @@ public class TransportActivityDto {
     public static TransportActivityDto fromEntity(TransportActivity entity) {
         return TransportActivityDto.builder()
                 .id(entity.getId())
-                .userId(entity.getUser().getId())
+                .userId(entity.getUser().getUserId())
                 .mode(entity.getMode().name())
                 .startTime(entity.getStartTime())
                 .endTime(entity.getEndTime())
