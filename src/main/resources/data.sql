@@ -1,8 +1,6 @@
 -- =====================
 -- 기존 데이터 초기화
 -- =====================
-DELETE FROM survey_option;
-DELETE FROM survey_item;
 DELETE FROM users;
 
 
