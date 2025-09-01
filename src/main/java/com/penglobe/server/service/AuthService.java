@@ -59,7 +59,7 @@ public class AuthService {
                 .email(req.email)
                 .passwordHash(passwordEncoder.encode(req.password))
                 .nickname(req.nickname)
-                .regionId(req.homeRegionId)
+                .regionId(req.regionId)
                 .profileId(req.profileId)
                 .isProfileComplete(true)
                 .build();
@@ -80,7 +80,7 @@ public class AuthService {
     // 카카오용 프로필 완료 API: 지역/닉네임 받아 complete=true
     public void completeProfile(long userId, CompleteProfileRequest req) {
         User u = userRepository.findById(userId).orElseThrow();
-        u.setRegionId(req.homeRegionId);
+        u.setRegionId(req.regionId);
         u.setNickname(req.nickname);
         if (req.profileId != null) u.setProfileId(req.profileId);
         u.setIsProfileComplete(true);
