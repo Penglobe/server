@@ -24,5 +24,4 @@ public class Regions extends BaseEntity {
     @Column(name = "total_co2kg", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalCo2kg = BigDecimal.ZERO; //지역별 총 탄소 절감량
 
-
 }
