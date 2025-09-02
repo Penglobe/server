@@ -18,6 +18,5 @@ public class SurveyItemDTO {
     @NoArgsConstructor
     public static class OptionDTO {
         private Integer value;
-        private String description;
     }
 }
