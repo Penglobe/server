@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -37,16 +38,20 @@ public class MyPageService {
                 .totalPoint(user.getTotalPoint())
                 .attendanceTotalDays(userCounters.getAttendanceTotalDays())
                 .longestAttendanceStreak(userCounters.getLongestAttendanceStreak())
+                .attendanceStreakDays(userCounters.getAttendanceStreakDays())
                 .build();
     }
 
     public DailyCarbonReductionDTO getDailyCarbonReduction(Long userId, LocalDate date) {
-        BigDecimal transportCo2Kg = transportActivityRepository.findByUserUserIdAndCreatedAt(userId, date.atStartOfDay())
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay(); // Start of the next day
+
+        BigDecimal transportCo2Kg = transportActivityRepository.findByUserUserIdAndCreatedAtBetween(userId, startOfDay, endOfDay)
                 .stream()
                 .map(activity -> Optional.ofNullable(activity.getCo2Kg()).orElse(BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal dietCo2Kg = dietRecordRepository.findByUserUserIdAndCreatedAt(userId, date.atStartOfDay())
+        BigDecimal dietCo2Kg = dietRecordRepository.findByUserUserIdAndCreatedAtBetween(userId, startOfDay, endOfDay)
                 .stream()
                 .map(record -> BigDecimal.valueOf(Optional.ofNullable(record.getCo2Kg()).orElse(0)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
