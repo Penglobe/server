@@ -46,5 +46,7 @@ public interface TransportActivityRepository extends JpaRepository<TransportActi
                                                      @Param("end") LocalDateTime end);
 
     // Added method for MyPageService
-    List<TransportActivity> findByUserUserIdAndActivityDate(Long userId, LocalDate activityDate);
+    List<TransportActivity> findByUserUserIdAndCreatedAt(Long userId, LocalDateTime createdAt);
+
+
 }
