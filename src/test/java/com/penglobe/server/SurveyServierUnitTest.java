@@ -61,11 +61,11 @@ class SurveyServiceUnitTest {
         request.setAnswer(Arrays.asList(a1, a2, a3, a4, a5));
 
         // --- SurveyItem + Option 정의 ---
-        SurveyItem i1 = new SurveyItem(); i1.setItemId(1L); i1.setCode("분리배출");
-        SurveyItem i2 = new SurveyItem(); i2.setItemId(2L); i2.setCode("일회용품");
-        SurveyItem i3 = new SurveyItem(); i3.setItemId(3L); i3.setCode("종이타월");
-        SurveyItem i4 = new SurveyItem(); i4.setItemId(4L); i4.setCode("음식물쓰레기");
-        SurveyItem i5 = new SurveyItem(); i5.setItemId(5L); i5.setCode("전자기기");
+        SurveyItem i1 = new SurveyItem(); i1.setSurveyItemId(1L); i1.setCode("분리배출");
+        SurveyItem i2 = new SurveyItem(); i2.setSurveyItemId(2L); i2.setCode("일회용품");
+        SurveyItem i3 = new SurveyItem(); i3.setSurveyItemId(3L); i3.setCode("종이타월");
+        SurveyItem i4 = new SurveyItem(); i4.setSurveyItemId(4L); i4.setCode("음식물쓰레기");
+        SurveyItem i5 = new SurveyItem(); i5.setSurveyItemId(5L); i5.setCode("전자기기");
 
         // 선택된 옵션 Mock
         SurveyOption o1 = new SurveyOption(); o1.setSurveyItem(i1); o1.setValue(1); o1.setCo2kg(0.05);
@@ -74,11 +74,11 @@ class SurveyServiceUnitTest {
         SurveyOption o4 = new SurveyOption(); o4.setSurveyItem(i4); o4.setValue(2); o4.setCo2kg(0.02);
         SurveyOption o5 = new SurveyOption(); o5.setSurveyItem(i5); o5.setValue(1); o5.setCo2kg(0.05);
 
-        when(optionRepository.findBySurveyItem_ItemIdAndValue(1L, 1)).thenReturn(Optional.of(o1));
-        when(optionRepository.findBySurveyItem_ItemIdAndValue(2L, 2)).thenReturn(Optional.of(o2));
-        when(optionRepository.findBySurveyItem_ItemIdAndValue(3L, 3)).thenReturn(Optional.of(o3));
-        when(optionRepository.findBySurveyItem_ItemIdAndValue(4L, 2)).thenReturn(Optional.of(o4));
-        when(optionRepository.findBySurveyItem_ItemIdAndValue(5L, 1)).thenReturn(Optional.of(o5));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(1L, 1)).thenReturn(Optional.of(o1));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(2L, 2)).thenReturn(Optional.of(o2));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(3L, 3)).thenReturn(Optional.of(o3));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(4L, 2)).thenReturn(Optional.of(o4));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(5L, 1)).thenReturn(Optional.of(o5));
 
         // maxCo2 Mock (상대점수 계산용)
         when(optionRepository.findMaxCo2ByItemId(1L)).thenReturn(0.05);
@@ -94,7 +94,7 @@ class SurveyServiceUnitTest {
 
         System.out.println("총 CO2: " + result.getTotalCo2());
         result.getTop3().forEach(top ->
-                System.out.println(top.getCode() + " - CO2: " + top.getCo2() + " / 상대점수: " + top.getRelativeScore())
+                System.out.println(top.getCode() + " - CO2: " + top.getCo2kg() + " / 상대점수: " + top.getRelativeScore())
         );
     }
 }

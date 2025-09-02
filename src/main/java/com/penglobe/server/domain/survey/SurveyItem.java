@@ -19,7 +19,7 @@ public class SurveyItem extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long itemId;
+    private Long  surveyItemId;
 
     //항목 코드
     //분리배출, 일회용품, 종이 타월사용, 음식물쓰레기, 에너지절약, 새로운시도

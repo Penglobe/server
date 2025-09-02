@@ -16,7 +16,7 @@ import lombok.Setter;
 public class SurveyAnswer extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long surveyAnswerId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_response_id", nullable = false)
