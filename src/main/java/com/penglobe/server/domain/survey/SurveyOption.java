@@ -19,7 +19,7 @@ import org.hibernate.cache.spi.support.AbstractReadWriteAccess;
 public class SurveyOption extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long survey_option_id;
+    private Long surveyOptionId;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "item_id", nullable = false)
