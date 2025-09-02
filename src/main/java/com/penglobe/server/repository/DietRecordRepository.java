@@ -17,6 +17,6 @@ import java.time.LocalDateTime;
 public interface DietRecordRepository extends JpaRepository<DietRecord, Long> {
     @Query("SELECT COALESCE(SUM(d.co2Kg), 0) FROM DietRecord d WHERE d.user.userId = :userId AND d.createdAt BETWEEN :startDate AND :endDate")
     BigDecimal sumCo2KgByUserAndPeriod(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
-    List<DietRecord> findByUserUserIdAndRecordDate(Long userId, LocalDate recordDate);
+    List<DietRecord> findByUserUserIdAndCreatedAt(Long userId, LocalDateTime createdAt);
 }
 
