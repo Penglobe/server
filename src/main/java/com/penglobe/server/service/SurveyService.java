@@ -38,10 +38,10 @@ public class SurveyService {
             List<SurveyOption> options = optionRepository.findBySurveyItem_SurveyItemId(item.getSurveyItemId());
 
             List<SurveyItemDTO.OptionDTO> dto = options.stream()
-                    .map(o -> new SurveyItemDTO.OptionDTO(o.getValue(), ""))
+                    .map(o -> new SurveyItemDTO.OptionDTO(o.getValue()))
                     .toList();
 
-            result.add(new SurveyItemDTO(item.getSurveyItemId(), item.getCode(), dto));
+            result.add(new SurveyItemDTO(item.getSurveyItemId(), item.getQuestion(), dto));
         }
 
         return result;
