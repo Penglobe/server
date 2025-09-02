@@ -371,7 +371,7 @@ class RankingServiceUnitTest {
                 .userId(userId)
                 .attendanceTotalDays(30)
                 .longestAttendanceStreak(15)
-                .attendanceStreakDays(7) // Add this line
+                .attendanceStreakDays(7)
                 .build();
         when(userCountersRepository.findByUserId(userId)).thenReturn(Optional.of(userCounters));
 
@@ -380,7 +380,10 @@ class RankingServiceUnitTest {
                 .user(user)
                 .co2Kg(BigDecimal.valueOf(0.50))
                 .build();
-        when(transportActivityRepository.findByUserUserIdAndActivityDate(userId, testDate))
+        LocalDateTime startOfDay = testDate.atStartOfDay();
+        LocalDateTime endOfDay = testDate.plusDays(1).atStartOfDay();
+
+        when(transportActivityRepository.findByUserUserIdAndCreatedAtBetween(userId, startOfDay, endOfDay))
                 .thenReturn(List.of(transportActivity));
 
         // 4. DietRecord Mock Data
@@ -388,7 +391,7 @@ class RankingServiceUnitTest {
                 .user(user)
                 .co2Kg(1) // Integer type
                 .build();
-        when(dietRecordRepository.findByUserUserIdAndRecordDate(userId, testDate))
+        when(dietRecordRepository.findByUserUserIdAndCreatedAtBetween(userId, startOfDay, endOfDay))
                 .thenReturn(List.of(dietRecord));
 
         // When
@@ -401,6 +404,7 @@ class RankingServiceUnitTest {
         assertThat(myPageInfo.getTotalPoint()).isEqualTo(500);
         assertThat(myPageInfo.getAttendanceTotalDays()).isEqualTo(30);
         assertThat(myPageInfo.getLongestAttendanceStreak()).isEqualTo(15);
+        assertThat(myPageInfo.getAttendanceStreakDays()).isEqualTo(7);
 
         // Then - DailyCarbonReduction Verification
         assertThat(dailyReduction).isNotNull();
