@@ -35,13 +35,13 @@ public class SurveyService {
         List<SurveyItemDTO> result = new ArrayList<>();
 
         for (SurveyItem item : items) {
-            List<SurveyOption> options = optionRepository.findBySurveyItem_ItemId(item.getItemId());
+            List<SurveyOption> options = optionRepository.findBySurveyItem_SurveyItemId(item.getSurveyItemId());
 
             List<SurveyItemDTO.OptionDTO> dto = options.stream()
                     .map(o -> new SurveyItemDTO.OptionDTO(o.getValue(), ""))
                     .toList();
 
-            result.add(new SurveyItemDTO(item.getItemId(), item.getCode(), dto));
+            result.add(new SurveyItemDTO(item.getSurveyItemId(), item.getCode(), dto));
         }
 
         return result;
@@ -55,7 +55,7 @@ public class SurveyService {
         List<TopCo2DTO> co2List = new ArrayList<>();
 
         for (SurveyAnswerDTO a : dto.getAnswer()) {
-            SurveyOption option = optionRepository.findBySurveyItem_ItemIdAndValue(a.getItemId(), a.getSelectValue())
+            SurveyOption option = optionRepository.findBySurveyItem_SurveyItemIdAndValue(a.getItemId(), a.getSelectValue())
                     .orElseThrow(() -> new RuntimeException("선택지를 찾을 수 없습니다."));
 
             SurveyAnswer answer = new SurveyAnswer();
@@ -68,7 +68,7 @@ public class SurveyService {
             response.getAnswers().add(answer);
 
             // 항목별 최대 CO₂ 조회 (상대점수 계산)
-            double maxCo2 = optionRepository.findMaxCo2ByItemId(option.getSurveyItem().getItemId());
+            double maxCo2 = optionRepository.findMaxCo2ByItemId(option.getSurveyItem().getSurveyItemId());
             double relativeScore = maxCo2 == 0 ? 0 : option.getCo2kg() / maxCo2;
 
             co2List.add(new TopCo2DTO(relativeScore, option.getCo2kg(), option.getSurveyItem().getCode()));
