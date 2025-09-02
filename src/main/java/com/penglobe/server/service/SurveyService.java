@@ -60,7 +60,7 @@ public class SurveyService {
 
             SurveyAnswer answer = new SurveyAnswer();
             answer.setSurveyResponse(response);
-            answer.setItemId(a.getItemId());
+            answer.setSurveyItemId(option.getSurveyItem());
             answer.setSelectValues(option.getValue());
             answer.setCo2kg(option.getCo2kg());
 

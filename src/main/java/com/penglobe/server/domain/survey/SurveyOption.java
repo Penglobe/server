@@ -22,7 +22,7 @@ public class SurveyOption extends BaseEntity {
     private Long surveyOptionId;
 
     @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name = "item_id", nullable = false)
+    @JoinColumn(name = "survey_item_id", nullable = false)
     private SurveyItem surveyItem;
 
     //선택지 값

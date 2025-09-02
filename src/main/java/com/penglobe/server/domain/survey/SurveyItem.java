@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "survey_item")
 @Getter
@@ -18,7 +21,7 @@ import org.hibernate.annotations.Comment;
 public class SurveyItem extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "survey_item_id")
     private Long  surveyItemId;
 
     //항목 코드
@@ -29,4 +32,7 @@ public class SurveyItem extends BaseEntity {
     //질문 내용
     @Column(nullable = false, length = 200)
     private String question;
+
+    @OneToMany(mappedBy = "surveyItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SurveyOption> options = new ArrayList<>();
 }

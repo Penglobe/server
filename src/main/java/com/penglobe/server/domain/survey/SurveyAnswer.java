@@ -23,8 +23,9 @@ public class SurveyAnswer extends BaseEntity {
     private SurveyResponse surveyResponse;
 
     //항목id
-    @Column(nullable = false)
-    private Long itemId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "survey_item_id", nullable = false)
+    private SurveyItem surveyItemId;
 
     //사용자가 선택한 값
     @Column(nullable = false)
