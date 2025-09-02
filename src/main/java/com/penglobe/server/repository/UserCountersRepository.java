@@ -24,4 +24,5 @@ public interface UserCountersRepository extends JpaRepository<UserCounters, Long
     @Query("SELECT SUM(COALESCE(uc.totalDistanceCo2Kg, 0) + COALESCE(uc.totalDietCo2Kg, 0) + COALESCE(uc.totalSurveyCo2Kg, 0)) " +
            "FROM UserCounters uc WHERE uc.user.regionId = :regionId")
     Optional<BigDecimal> sumTotalCo2ByRegionId(@Param("regionId") Integer regionId);
+    Optional<UserCounters> findByUserId(Long userId);
 }
