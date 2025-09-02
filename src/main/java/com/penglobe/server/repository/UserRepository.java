@@ -19,5 +19,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Transactional
     @Query("update User u set u.lastWeekRank = null")
     void resetAllLastWeekRanks();
+    Optional<User> findByUserId(Long userId);
 }
 
