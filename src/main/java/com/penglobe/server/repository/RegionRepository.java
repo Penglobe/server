@@ -8,15 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface RegionRepository extends JpaRepository<Regions, Integer> {
-    @Query("""
-    select new com.penglobe.server.dto.RegionDTO(
-    r.regionId, r.name, CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal)
-    )
-    from Regions r
-    join User u ON u.regionId = r.regionId
-    join UserCounters uc ON uc.userId = u.userId
-    group by r.regionId, r.name
-    order by CAST(SUM(uc.totalDistanceCo2Kg) + SUM(uc.totalDietCo2Kg) AS BigDecimal) DESC
-""")
+    @Query("SELECT new com.penglobe.server.dto.RegionDTO(r.regionId, r.name, r.totalCo2kg) FROM Regions r ORDER BY r.totalCo2kg DESC")
     List<RegionDTO> getRegionRankings();
 }

@@ -17,16 +17,12 @@ public class DietRecord extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long dietId;
 
     // 사용자 FK
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    // 식단 기록 날짜
-    @Column(name = "taken_on", nullable = false)
-    private LocalDate takenOn;
 
     // 업로드한 이미지 URL
     @Column(name = "image_url", nullable = false, length = 255)

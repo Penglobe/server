@@ -1,10 +1,14 @@
 package com.penglobe.server.service;
 
+import com.penglobe.server.domain.ranking.AllRanking;
 import com.penglobe.server.domain.ranking.WeeklyRanking;
+import com.penglobe.server.domain.region.Regions;
 import com.penglobe.server.domain.user.User;
+import com.penglobe.server.dto.UserTotalScoreDTO;
 import com.penglobe.server.dto.ranking.MyRankingDTO;
 import com.penglobe.server.dto.ranking.RankingInfoDTO;
 import com.penglobe.server.dto.ranking.WeeklyRankingResponseDTO;
+import com.penglobe.server.dto.RegionDTO;
 import com.penglobe.server.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,9 +31,11 @@ public class RankingService {
     private final UserRepository userRepository;
     private final UserCountersRepository userCountersRepository;
     private final WeeklyRankingRepository weeklyRankingRepository;
+    private final AllRankingRepository allRankingRepository;
     private final TransportActivityRepository transportActivityRepository;
     private final DietRecordRepository dietRecordRepository;
     private final SurveyResponseRepository surveyResponseRepository;
+    private final RegionRepository regionRepository;
 
     // 사용자 점수를 임시로 저장하기 위한 내부 record
     private record UserScore(User user, BigDecimal score) {}
@@ -132,6 +138,90 @@ public class RankingService {
     }
 
     /**
+     * 전체 랭킹을 업데이트하는 로직
+     */
+    @Transactional
+    public void updateAllRanking() {
+        // 1. DB에서 직접 합산 및 정렬된 점수 목록 조회
+        List<UserTotalScoreDTO> userScores = userCountersRepository.findUserTotalScores();
+
+        // 2. 순위 부여 및 AllRanking 엔티티 생성
+        List<AllRanking> allRankings = new ArrayList<>();
+        for (int i = 0; i < userScores.size(); i++) {
+            UserTotalScoreDTO current = userScores.get(i);
+
+            // 점수가 0 이하인 사용자는 랭킹에서 제외
+            if (current.getTotalScore() == null || current.getTotalScore().compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            int rank;
+            // 동점자 처리
+            if (i > 0 && current.getTotalScore().compareTo(userScores.get(i - 1).getTotalScore()) == 0) {
+                rank = allRankings.get(allRankings.size() - 1).getRanking();
+            } else {
+                rank = allRankings.size() + 1;
+            }
+
+            AllRanking rankingEntry = AllRanking.builder()
+                    .userId(current.getUserId())
+                    .nickname(current.getNickname())
+                    .score(current.getTotalScore())
+                    .ranking(rank)
+                    .build();
+            allRankings.add(rankingEntry);
+        }
+
+        // 3. 테이블 업데이트
+        allRankingRepository.deleteAllInBatch();
+        allRankingRepository.saveAll(allRankings);
+
+        System.out.println("전체 랭킹 업데이트 완료. 처리된 사용자 수: " + allRankings.size());
+    }
+
+    /**
+     * 지역별 랭킹 점수를 업데이트하는 로직
+     */
+    @Transactional
+    public void updateRegionRankings() {
+        List<Regions> allRegions = regionRepository.findAll();
+        for (Regions region : allRegions) {
+            BigDecimal totalCo2 = userCountersRepository.sumTotalCo2ByRegionId(region.getRegionId())
+                    .orElse(BigDecimal.ZERO);
+            region.setTotalCo2kg(totalCo2);
+        }
+        // @Transactional에 의해 메서드 종료 시 자동으로 DB에 업데이트됨
+        System.out.println("지역별 랭킹 점수 업데이트 완료. 처리된 지역 수: " + allRegions.size());
+    }
+
+    /**
+     * CO2 총 절감량 기준 지역별 랭킹을 조회합니다.
+     * <p>
+     * 1. Repository를 통해 각 지역의 CO2 절감량 합계를 내림차순으로 정렬하여 조회합니다.
+     * 2. 조회된 리스트를 순회하며 순위를 부여합니다.
+     * 3. 동점자 발생 시 같은 순위를 부여하고, 다음 순위는 동점자 수만큼 건너뛰어 계산합니다. (예: 1, 2, 2, 4)
+     *
+     * @return 순위가 포함된 RegionDTO 리스트
+     */
+    @Transactional(readOnly = true)
+    public List<RegionDTO> getRegionRankings() {
+        List<RegionDTO> regionRankings = regionRepository.getRegionRankings();
+        int rank = 0;
+        BigDecimal lastScore = new BigDecimal(-1); // 이전 점수를 저장할 변수
+
+        for (int i = 0; i < regionRankings.size(); i++) {
+            RegionDTO current = regionRankings.get(i);
+            // 이전 점수와 다를 경우에만 순위를 i+1로 갱신
+            if (current.getTotalCo2().compareTo(lastScore) != 0) {
+                rank = i + 1;
+            }
+            current.setRank(rank);
+            lastScore = current.getTotalCo2();
+        }
+        return regionRankings;
+    }
+
+    /**
      * 주간 랭킹 정보(Top 10 + 내 순위)를 조회하는 로직
      * @param currentUserId 현재 접속한 사용자의 ID
      * @return 주간 랭킹 응답 DTO
@@ -140,12 +230,32 @@ public class RankingService {
     public WeeklyRankingResponseDTO getWeeklyRanking(Long currentUserId) {
         // 1. Top 10 조회
         List<RankingInfoDTO> top10 = weeklyRankingRepository.findTop10ByOrderByRankingAsc().stream()
-                .map(RankingInfoDTO::new)
+                .map(wr -> new RankingInfoDTO(wr.getRanking(), wr.getNickname(), wr.getScore()))
                 .toList();
 
         // 2. 내 순위 조회
         MyRankingDTO myRank = weeklyRankingRepository.findByUserId(currentUserId)
-                .map(MyRankingDTO::new)
+                .map(wr -> new MyRankingDTO(wr.getRanking(), wr.getScore()))
+                .orElse(null); // 랭킹에 없으면 null
+
+        return new WeeklyRankingResponseDTO(top10, myRank);
+    }
+
+    /**
+     * 전체 랭킹 정보(Top 10 + 내 순위)를 조회하는 로직
+     * @param currentUserId 현재 접속한 사용자의 ID
+     * @return 전체 랭킹 응답 DTO
+     */
+    @Transactional(readOnly = true)
+    public WeeklyRankingResponseDTO getAllRanking(Long currentUserId) {
+        // 1. Top 10 조회
+        List<RankingInfoDTO> top10 = allRankingRepository.findTop10ByOrderByRankingAsc().stream()
+                .map(ar -> new RankingInfoDTO(ar.getRanking(), ar.getNickname(), ar.getScore()))
+                .toList();
+
+        // 2. 내 순위 조회
+        MyRankingDTO myRank = allRankingRepository.findByUserId(currentUserId)
+                .map(ar -> new MyRankingDTO(ar.getRanking(), ar.getScore()))
                 .orElse(null); // 랭킹에 없으면 null
 
         return new WeeklyRankingResponseDTO(top10, myRank);

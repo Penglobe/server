@@ -22,7 +22,6 @@ public class BookmarkService {
                 .user(user)
                 .bookmarkLabel(dto.getBookmarkLabel())
                 .address(dto.getAddress())
-                .regionId(dto.getRegionId())
                 .lat(dto.getLat())
                 .lng(dto.getLng())
                 .build();
@@ -43,7 +42,6 @@ public class BookmarkService {
         UserPlaceBookmark b = get(id);
         b.setBookmarkLabel(dto.getBookmarkLabel());
         b.setAddress(dto.getAddress());
-        b.setRegionId(dto.getRegionId());
         b.setLat(dto.getLat());
         b.setLng(dto.getLng());
         return b;
