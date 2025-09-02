@@ -21,7 +21,7 @@ import java.util.List;
 public class SurveyResponse extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long surveyResponseId;
 
     @Column(nullable = false)
     private Long userId;
