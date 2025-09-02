@@ -1,6 +1,8 @@
 package com.penglobe.server.controller;
 
 import com.penglobe.server.domain.quiz.QuizQuestions;
+import com.penglobe.server.dto.QuizRequestDTO;
+import com.penglobe.server.dto.survey.SurveySubmitRequestDTO;
 import com.penglobe.server.service.QuizQuestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,10 +27,10 @@ public class QuizController {
 
     @PostMapping("/submit")
     @Operation(summary = "퀴즈 답 제출 및 포인트 적립", description = "사용자가 퀴즈 답을 제출하면 포인트가 적립됩니다. 정답 10포인트, 오답 1포인트")
-    public Map<String, Object> submitAnswer(@Parameter(description = "사용자 ID", required = true)
-                                                @RequestParam("userId") Long userId,
-                                            @Parameter(description = "사용자 답변 (O=true, X=false)", required = true)
-                                                @RequestParam("answer") Boolean answer) {
+    public Map<String, Object> submitAnswer(@RequestBody QuizRequestDTO requestDTO) {
+        Long userId = requestDTO.getUserId();
+        Boolean answer = requestDTO.getAnswer();
+
         int points = quizQuestionService.submitAnswer(userId, answer);
         return Map.of("points", points);
     }
