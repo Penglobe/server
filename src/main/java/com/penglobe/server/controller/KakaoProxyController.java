@@ -1,5 +1,7 @@
 package com.penglobe.server.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.penglobe.server.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,11 +26,10 @@ public class KakaoProxyController {
             description = "카카오 로컬 API를 통해 주소를 검색합니다."
     )
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<String>> search(
-            @Parameter(description = "검색할 주소/장소명 (예: 서울역)", required = true)
+    public ResponseEntity<ApiResponse<Object>> search(
             @RequestParam String query
-    ) {
-        String url = "https://dapi.kakao.com/v2/local/search/address.json?query=" + query;
+    ) throws JsonProcessingException {
+        String url = "https://dapi.kakao.com/v2/local/search/keyword.json?query=" + query;
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "KakaoAK " + kakaoApiKey);
@@ -37,7 +38,12 @@ public class KakaoProxyController {
         ResponseEntity<String> response =
                 restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
-        return ResponseEntity.ok(ApiResponse.success(response.getBody()));
+        // 🔥 String -> JSON 객체로 바로 변환
+        ObjectMapper mapper = new ObjectMapper();
+        Object jsonObj = mapper.readValue(response.getBody(), Object.class);
+
+        return ResponseEntity.ok(ApiResponse.success(jsonObj));
     }
+
 
 }

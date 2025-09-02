@@ -30,9 +30,6 @@ public class UserPlaceBookmark extends BaseEntity {
     @Column(length = 255)
     private String address;
 
-    @Column(name = "region_id")
-    private Integer regionId;
-
     @Column(nullable = false, precision = 10, scale = 7)
     private BigDecimal lat;
 
