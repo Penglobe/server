@@ -21,8 +21,8 @@ public class Regions extends BaseEntity {
     private String name; //지역 명
 
     @Builder.Default
-    @Column(name = "total_co2", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalCo2 = BigDecimal.ZERO; //지역별 총 탄소 절감량
+    @Column(name = "total_co2kg", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalCo2kg = BigDecimal.ZERO; //지역별 총 탄소 절감량
 
 
 }
