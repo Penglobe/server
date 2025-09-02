@@ -5,7 +5,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate; // Added import for LocalDate
 import java.time.LocalDateTime;
+import java.util.List; // Added import for List
 import java.util.Optional;
 import java.util.Set;
 
@@ -42,4 +44,7 @@ public interface TransportActivityRepository extends JpaRepository<TransportActi
             "AND t.createdAt < :end")
     Set<Long> findDistinctUserIdsWithActivityBetween(@Param("start") LocalDateTime start,
                                                      @Param("end") LocalDateTime end);
+
+    // Added method for MyPageService
+    List<TransportActivity> findByUserUserIdAndActivityDate(Long userId, LocalDate activityDate);
 }
