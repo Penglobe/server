@@ -4,7 +4,9 @@ import com.penglobe.server.dto.RegionDTO;
 import com.penglobe.server.repository.RegionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -22,20 +24,21 @@ public class RegionService {
      *
      * @return 순위가 포함된 RegionDTO 리스트
      */
+    @Transactional(readOnly = true)
     public List<RegionDTO> getRegionRankings() {
-        // 1. 레포지토리에서 절감량 기준으로 정렬된 지역 목록을 조회합니다.
         List<RegionDTO> regionRankings = regionRepository.getRegionRankings();
+        int rank = 0;
+        BigDecimal lastScore = new BigDecimal(-1); // 이전 점수를 저장할 변수
 
-        // 2. 조회된 데이터를 바탕으로 랭킹을 계산하고 DTO에 순위를 설정합니다.
-        int rank = 1;
         for (int i = 0; i < regionRankings.size(); i++) {
-            // 동점자 처리: 이전 지역과 총 절감량이 다를 경우에만 순위를 현재 인덱스 + 1로 업데이트합니다.
-            if (i > 0 && regionRankings.get(i).getTotalSaving().compareTo(regionRankings.get(i - 1).getTotalSaving()) != 0) {
+            RegionDTO current = regionRankings.get(i);
+            // 이전 점수와 다를 경우에만 순위를 i+1로 갱신
+            if (current.getTotalCo2().compareTo(lastScore) != 0) {
                 rank = i + 1;
             }
-            regionRankings.get(i).setRank(rank);
+            current.setRank(rank);
+            lastScore = current.getTotalCo2();
         }
-
         return regionRankings;
     }
 

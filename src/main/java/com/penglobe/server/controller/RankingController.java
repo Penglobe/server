@@ -30,4 +30,17 @@ public class RankingController {
         WeeklyRankingResponseDTO response = rankingService.getWeeklyRanking(currentUserId);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(
+            summary = "전체 랭킹",
+            description = "전체 랭킹과 현재 로그인한 사용자의 랭킹 출력"
+    )
+    @GetMapping("/global")
+    public ResponseEntity<WeeklyRankingResponseDTO> getAllRanking() {
+        // TODO: 아래는 임시 ID입니다. 실제 사용자 ID 필요
+        Long currentUserId = 1L; // 현재 로그인한 사용자의 ID (임시)
+
+        WeeklyRankingResponseDTO response = rankingService.getAllRanking(currentUserId);
+        return ResponseEntity.ok(response);
+    }
 }
