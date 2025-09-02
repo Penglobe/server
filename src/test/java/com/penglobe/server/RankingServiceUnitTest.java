@@ -8,6 +8,11 @@ import com.penglobe.server.dto.ranking.MyRankingDTO;
 import com.penglobe.server.dto.ranking.WeeklyRankingResponseDTO;
 import com.penglobe.server.repository.*;
 import com.penglobe.server.service.RankingService;
+import com.penglobe.server.service.MyPageService;
+import com.penglobe.server.dto.MyPageDTO;
+import com.penglobe.server.dto.DailyCarbonReductionDTO;
+import com.penglobe.server.domain.transport.TransportActivity;
+import com.penglobe.server.domain.diet.DietRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,8 +40,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class RankingServiceUnitTest {
 
-    @InjectMocks
+        @InjectMocks
     private RankingService rankingService;
+
+    @InjectMocks
+    private MyPageService myPageService;
 
     @Mock
     private UserRepository userRepository;
@@ -283,15 +291,15 @@ class RankingServiceUnitTest {
         for (int i = 0; i < mockRegions.size(); i++) {
             Regions region = mockRegions.get(i);
             BigDecimal expectedScore = BigDecimal.valueOf(100L * (18 - region.getRegionId()));
-            assertThat(region.getTotalCo2()).isEqualByComparingTo(expectedScore);
+            assertThat(region.getTotalCo2kg()).isEqualByComparingTo(expectedScore);
 
-            System.out.printf("지역: %-10s, 계산된 점수: %s%n", region.getName(), region.getTotalCo2());
+            System.out.printf("지역: %-10s, 계산된 점수: %s%n", region.getName(), region.getTotalCo2kg());
         }
         System.out.println("------------------------------------\n");
 
         // 서비스가 끝난 후, region 객체들의 점수가 null이 아닌지 추가 확인
-        assertThat(mockRegions.get(0).getTotalCo2()).isNotNull();
-        assertThat(mockRegions.get(16).getTotalCo2()).isNotNull();
+        assertThat(mockRegions.get(0).getTotalCo2kg()).isNotNull();
+        assertThat(mockRegions.get(16).getTotalCo2kg()).isNotNull();
     }
 
     @Test
@@ -335,11 +343,77 @@ class RankingServiceUnitTest {
 
         // Then
         System.out.println("\n--- 사용자 데이터 기반 지역 점수 계산 테스트 ---");
-        System.out.printf("서울 예상 점수: %s, 실제 저장된 점수: %s%n", seoulScore, seoul.getTotalCo2());
-        System.out.printf("경기 예상 점수: %s, 실제 저장된 점수: %s%n", gyeonggiScore, gyeonggi.getTotalCo2());
+        System.out.printf("서울 예상 점수: %s, 실제 저장된 점수: %s%n", seoulScore, seoul.getTotalCo2kg());
+        System.out.printf("경기 예상 점수: %s, 실제 저장된 점수: %s%n", gyeonggiScore, gyeonggi.getTotalCo2kg());
         System.out.println("------------------------------------------\n");
 
-        assertThat(seoul.getTotalCo2()).isEqualByComparingTo(seoulScore);
-        assertThat(gyeonggi.getTotalCo2()).isEqualByComparingTo(gyeonggiScore);
+        assertThat(seoul.getTotalCo2kg()).isEqualByComparingTo(seoulScore);
+        assertThat(gyeonggi.getTotalCo2kg()).isEqualByComparingTo(gyeonggiScore);
+    }
+
+    @Test
+    @DisplayName("마이페이지 기능: 사용자 정보 및 일별 탄소 절감량 조회가 정확해야 한다")
+    void testMyPageFunctionality() {
+        // Given
+        Long userId = 100L;
+        LocalDate testDate = LocalDate.of(2025, 9, 1);
+
+        // 1. User Mock Data
+        User user = User.builder()
+                .userId(userId)
+                .nickname("테스트유저")
+                .totalPoint(500)
+                .build();
+        when(userRepository.findByUserId(userId)).thenReturn(Optional.of(user));
+
+        // 2. UserCounters Mock Data
+        UserCounters userCounters = UserCounters.builder()
+                .userId(userId)
+                .attendanceTotalDays(30)
+                .longestAttendanceStreak(15)
+                .attendanceStreakDays(7) // Add this line
+                .build();
+        when(userCountersRepository.findByUserId(userId)).thenReturn(Optional.of(userCounters));
+
+        // 3. TransportActivity Mock Data
+        TransportActivity transportActivity = TransportActivity.builder()
+                .user(user)
+                .co2Kg(BigDecimal.valueOf(0.50))
+                .build();
+        when(transportActivityRepository.findByUserUserIdAndActivityDate(userId, testDate))
+                .thenReturn(List.of(transportActivity));
+
+        // 4. DietRecord Mock Data
+        DietRecord dietRecord = DietRecord.builder()
+                .user(user)
+                .co2Kg(1) // Integer type
+                .build();
+        when(dietRecordRepository.findByUserUserIdAndRecordDate(userId, testDate))
+                .thenReturn(List.of(dietRecord));
+
+        // When
+        MyPageDTO myPageInfo = myPageService.getMyPageInfo(userId);
+        DailyCarbonReductionDTO dailyReduction = myPageService.getDailyCarbonReduction(userId, testDate);
+
+        // Then - MyPageInfo Verification
+        assertThat(myPageInfo).isNotNull();
+        assertThat(myPageInfo.getNickname()).isEqualTo("테스트유저");
+        assertThat(myPageInfo.getTotalPoint()).isEqualTo(500);
+        assertThat(myPageInfo.getAttendanceTotalDays()).isEqualTo(30);
+        assertThat(myPageInfo.getLongestAttendanceStreak()).isEqualTo(15);
+
+        // Then - DailyCarbonReduction Verification
+        assertThat(dailyReduction).isNotNull();
+        assertThat(dailyReduction.getTransportCo2Kg()).isEqualByComparingTo(BigDecimal.valueOf(0.50));
+        assertThat(dailyReduction.getDietCo2Kg()).isEqualByComparingTo(BigDecimal.valueOf(1.00)); // Integer 1 converted to BigDecimal 1.00
+        assertThat(dailyReduction.getTotalCo2Kg()).isEqualByComparingTo(BigDecimal.valueOf(1.50));
+
+        System.out.println(" --- 마이페이지 기능 테스트 결과 ---");
+                System.out.printf("닉네임: %s, 보유 포인트: %d, 누적 출석: %d일, 최장 연속 출석: %d일, 현재 연속 출석: %d일%n",
+                myPageInfo.getNickname(), myPageInfo.getTotalPoint(),
+                myPageInfo.getAttendanceTotalDays(), myPageInfo.getLongestAttendanceStreak(), myPageInfo.getAttendanceStreakDays());
+        System.out.printf("2025-09-01 환경걸음 절감량: %s kg, 식단 절감량: %s kg, 총 절감량: %s kg%n",
+                dailyReduction.getTransportCo2Kg(), dailyReduction.getDietCo2Kg(), dailyReduction.getTotalCo2Kg());
+        System.out.println("----------------------------------- ");
     }
 }

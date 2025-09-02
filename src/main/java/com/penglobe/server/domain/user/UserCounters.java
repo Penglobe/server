@@ -51,4 +51,8 @@ public class UserCounters extends BaseEntity {
 
     /** 마지막 출석 날짜 */
     private LocalDate lastAttendanceDate;
+
+    /** 최장 연속 출석 일수 */
+    @Builder.Default
+    private Integer longestAttendanceStreak = 0;
 }
