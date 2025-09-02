@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 public interface QuizQuestionRepository extends JpaRepository<QuizQuestions, Long> {
@@ -17,4 +18,5 @@ public interface QuizQuestionRepository extends JpaRepository<QuizQuestions, Lon
 
     @Query("SELECT MAX(q.quizId) FROM QuizQuestions q")
     Long findMaxId();
+
 }

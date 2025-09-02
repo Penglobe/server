@@ -11,5 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class QuizRequestDTO {
     private Long userId;
+    private Long quizId;
     private Boolean answer;
+
 }

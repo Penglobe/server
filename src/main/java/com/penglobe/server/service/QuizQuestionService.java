@@ -4,15 +4,11 @@ import com.penglobe.server.domain.ledger.LedgerReason;
 import com.penglobe.server.domain.ledger.PointsLedger;
 import com.penglobe.server.domain.quiz.QuizQuestions;
 import com.penglobe.server.domain.user.User;
-import com.penglobe.server.repository.PointsLedgerRepository;
-import com.penglobe.server.repository.QuizQuestionRepository;
-import com.penglobe.server.repository.UserRepository;
+import com.penglobe.server.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.awt.print.Book;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -45,7 +41,7 @@ public class QuizQuestionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        int points = quiz.getIsAnswerTrue().equals(userAnswer) ? 10 : 1;
+        int points = quiz.getIsAnswerTrue().equals(userAnswer) ? 1 : 10;
 
         user.setTotalPoint(user.getTotalPoint() + points);
 
