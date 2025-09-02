@@ -13,6 +13,7 @@ class QuizServiceTest {
 
     @Test
     void testRandomQuizFromDatabase() {
+        Long userId = 177L;
         for (int i = 0; i < 1; i++) {
             QuizQuestions quiz = quizService.getDailyQuiz();
             System.out.println("===오늘 퀴즈===");
