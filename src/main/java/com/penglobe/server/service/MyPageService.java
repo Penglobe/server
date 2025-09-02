@@ -41,12 +41,12 @@ public class MyPageService {
     }
 
     public DailyCarbonReductionDTO getDailyCarbonReduction(Long userId, LocalDate date) {
-        BigDecimal transportCo2Kg = transportActivityRepository.findByUserUserIdAndActivityDate(userId, date)
+        BigDecimal transportCo2Kg = transportActivityRepository.findByUserUserIdAndCreatedAt(userId, date.atStartOfDay())
                 .stream()
                 .map(activity -> Optional.ofNullable(activity.getCo2Kg()).orElse(BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal dietCo2Kg = dietRecordRepository.findByUserUserIdAndRecordDate(userId, date)
+        BigDecimal dietCo2Kg = dietRecordRepository.findByUserUserIdAndCreatedAt(userId, date.atStartOfDay())
                 .stream()
                 .map(record -> BigDecimal.valueOf(Optional.ofNullable(record.getCo2Kg()).orElse(0)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
