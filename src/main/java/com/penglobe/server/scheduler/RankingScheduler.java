@@ -26,4 +26,20 @@ public class RankingScheduler {
     public void scheduleWeeklyFinalization() {
         rankingService.finalizeWeeklyRanking();
     }
+
+    /**
+     * 매일 새벽 2시에 전체 랭킹을 갱신합니다.
+     */
+    @Scheduled(cron = "0 0 2 * * ?")
+    public void scheduleAllRankingUpdate() {
+        rankingService.updateAllRanking();
+    }
+
+    /**
+     * 매일 새벽 3시에 지역별 랭킹 점수를 갱신합니다.
+     */
+    @Scheduled(cron = "0 0 3 * * ?")
+    public void scheduleRegionRankingUpdate() {
+        rankingService.updateRegionRankings();
+    }
 }
