@@ -6,6 +6,7 @@ import com.penglobe.server.domain.transport.TransportActivity;
 import com.penglobe.server.domain.transport.TransportMode;
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.domain.user.UserCounters;
+import com.penglobe.server.dto.TransportActivityDto;
 import com.penglobe.server.repository.PointsLedgerRepository;
 import com.penglobe.server.repository.TransportActivityRepository;
 import com.penglobe.server.repository.UserCountersRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
@@ -43,51 +45,47 @@ public class TransportActivityService {
 
     // 이동 종료 (거리, 경로 저장, CO₂ 절감량 계산)
     @Transactional
-    public TransportActivity stopActivity(Long transportId, int distanceM, String pathGeojson) {
+    public TransportActivityDto stopActivity(Long transportId, int distanceM, String pathGeojson) {
         TransportActivity activity = activityRepository.findById(transportId)
                 .orElseThrow(() -> new IllegalArgumentException("활동을 찾을 수 없습니다."));
 
         activity.setEndTime(LocalDateTime.now());
         activity.setDistanceM(distanceM);
 
-        // 🚩 CO₂ 절감량 계산 (소수점 둘째 자리 반올림)
+        // 🚩 CO₂ 절감량
         BigDecimal co2Kg = calculateCo2Saving(distanceM, activity.getMode());
         activity.setCo2Kg(co2Kg);
 
-        // ✅ 유저의 누적 절감량 업데이트
-        if (co2Kg.compareTo(BigDecimal.ZERO) > 0) {
-            UserCounters counters = userCountersRepository.findById(activity.getUser().getUserId())
-                    .orElseThrow(() -> new IllegalStateException("UserCounters를 찾을 수 없습니다."));
-
-            counters.setTotalDistanceCo2Kg(
-                    counters.getTotalDistanceCo2Kg().add(co2Kg)
-            );
-            userCountersRepository.save(counters);
+        // ✅ duration 계산
+        int durationM = 0;
+        if (activity.getStartTime() != null && activity.getEndTime() != null) {
+            durationM = (int) Duration.between(activity.getStartTime(), activity.getEndTime()).toMinutes();
         }
 
-        // ✅ 포인트 지급 (1kg 절감량당 100 포인트)
+        // ✅ 포인트 계산
         int points = co2Kg.multiply(BigDecimal.valueOf(100))
-                .setScale(0, RoundingMode.FLOOR) // 소수점 버림
+                .setScale(0, RoundingMode.FLOOR)
                 .intValue();
 
         if (points > 0) {
             User user = activity.getUser();
-
-            // 유저 보유 포인트 업데이트
             user.setTotalPoint(user.getTotalPoint() + points);
             userRepository.save(user);
 
-            // 포인트 적립 내역 저장
             PointsLedger ledger = PointsLedger.builder()
                     .user(user)
                     .changeAmount(points)
-                    .reason(LedgerReason.TRANSPORT_ACTIVITY) // 🚩 교통 활동 적립 사유
+                    .reason(LedgerReason.TRANSPORT_ACTIVITY)
                     .build();
             pointsLedgerRepository.save(ledger);
         }
 
-        return activityRepository.save(activity);
+        activityRepository.save(activity);
+
+        // ✅ 여기서 DTO 조립
+        return TransportActivityDto.fromEntity(activity, durationM, points);
     }
+
 
 
     // CO₂ 절감량 계산 로직
