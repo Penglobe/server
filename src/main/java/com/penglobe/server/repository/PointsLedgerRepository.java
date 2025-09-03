@@ -20,4 +20,12 @@ public interface PointsLedgerRepository extends JpaRepository<PointsLedger, Long
 
     // 최신 레저 조회
     PointsLedger findTopByUserOrderByCreatedAtDesc(User user);
+
+    //중복 제출 조회
+    @Query("SELECT COUNT(p) FROM PointsLedger p " +
+            "WHERE p.user.userId = :userId " +
+            "AND DATE(p.createdAt) = CURRENT_DATE " +
+            "AND p.reason = 'QUIZ'")
+    long countTodayQuizSubmit(@Param("userId") Long userId);
+
 }
