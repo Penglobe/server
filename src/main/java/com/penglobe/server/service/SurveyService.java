@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,13 +50,24 @@ public class SurveyService {
     }
 
     public SurveyResultDTO submitSurvey(SurveySubmitRequestDTO dto) {
+        LocalDateTime today = LocalDateTime.now();
+        LocalDateTime startOfDay = today.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = today.toLocalDate().atTime(LocalTime.MAX);
+
+        boolean alreadyExists = responseRepository.existsByUserIdAndCreatedAtBetween(
+                dto.getUserId(), startOfDay, endOfDay
+        );
+
+        if (alreadyExists) {
+            System.out.println("S################################이미 제출됨");
+            return null;
+        }
+
         SurveyResponse response = new SurveyResponse();
         response.setUserId(dto.getUserId());
 
         double totalCo2 = 0;
         List<TopCo2DTO> co2List = new ArrayList<>();
-
-        System.out.println("@@@@@@@@@서비스@@@@@@@@@@" + dto.getUserId() + dto.getAnswer()) ;
 
         for (SurveyAnswerDTO a : dto.getAnswer()) {
             SurveyOption option = (SurveyOption) optionRepository.findBySurveyItem_SurveyItemIdAndValue(a.getItemId(), a.getSelectValue())
@@ -65,7 +78,7 @@ public class SurveyService {
             answer.setSurveyItemId(option.getSurveyItem());
             answer.setCo2kg(option.getCo2kg());
             answer.setSelectValues(a.getSelectValue());
-            System.out.println("@@@@@@@@@@@@" + option.getSurveyItem() + option.getCo2kg());
+            answer.setUserId(dto.getUserId());
 
             //answer를 response에 추가 => 그래서 totalCo2
             response.getAnswers().add(answer);
@@ -76,10 +89,11 @@ public class SurveyService {
 
             co2List.add(new TopCo2DTO(relativeScore, option.getCo2kg(), option.getSurveyItem().getCode()));
             totalCo2 += option.getCo2kg();
+            totalCo2 = Math.round(totalCo2*100.0) / 100.0;
         }
 
         response.setTotalCo2kg(totalCo2);
-        response.setSurveyDate(LocalDate.now());
+        //response.setSurveyDate(LocalDate.now());
         responseRepository.save(response);
 
     //상대점수 기준 Top3 선택
