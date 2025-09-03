@@ -1,16 +1,21 @@
 package com.penglobe.server.service;
 
+import com.penglobe.server.domain.ledger.LedgerReason;
+import com.penglobe.server.domain.ledger.PointsLedger;
 import com.penglobe.server.domain.transport.TransportActivity;
 import com.penglobe.server.domain.transport.TransportMode;
 import com.penglobe.server.domain.user.User;
+import com.penglobe.server.domain.user.UserCounters;
+import com.penglobe.server.repository.PointsLedgerRepository;
 import com.penglobe.server.repository.TransportActivityRepository;
+import com.penglobe.server.repository.UserCountersRepository;
+import com.penglobe.server.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -18,6 +23,9 @@ import java.time.LocalDateTime;
 public class TransportActivityService {
 
     private final TransportActivityRepository activityRepository;
+    private final UserRepository userRepository;
+    private final UserCountersRepository userCountersRepository;
+    private final PointsLedgerRepository pointsLedgerRepository;
 
     // 이동 시작
     @Transactional
@@ -46,11 +54,41 @@ public class TransportActivityService {
         BigDecimal co2Kg = calculateCo2Saving(distanceM, activity.getMode());
         activity.setCo2Kg(co2Kg);
 
-        // TODO: 유저의 누적 절감량 업데이트
-        // TODO: 유저 포인트 지급 로직 추가
+        // ✅ 유저의 누적 절감량 업데이트
+        if (co2Kg.compareTo(BigDecimal.ZERO) > 0) {
+            UserCounters counters = userCountersRepository.findById(activity.getUser().getUserId())
+                    .orElseThrow(() -> new IllegalStateException("UserCounters를 찾을 수 없습니다."));
+
+            counters.setTotalDistanceCo2Kg(
+                    counters.getTotalDistanceCo2Kg().add(co2Kg)
+            );
+            userCountersRepository.save(counters);
+        }
+
+        // ✅ 포인트 지급 (1kg 절감량당 100 포인트)
+        int points = co2Kg.multiply(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.FLOOR) // 소수점 버림
+                .intValue();
+
+        if (points > 0) {
+            User user = activity.getUser();
+
+            // 유저 보유 포인트 업데이트
+            user.setTotalPoint(user.getTotalPoint() + points);
+            userRepository.save(user);
+
+            // 포인트 적립 내역 저장
+            PointsLedger ledger = PointsLedger.builder()
+                    .user(user)
+                    .changeAmount(points)
+                    .reason(LedgerReason.TRANSPORT_ACTIVITY) // 🚩 교통 활동 적립 사유
+                    .build();
+            pointsLedgerRepository.save(ledger);
+        }
 
         return activityRepository.save(activity);
     }
+
 
     // CO₂ 절감량 계산 로직
     private BigDecimal calculateCo2Saving(int distanceM, TransportMode mode) {
