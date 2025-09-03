@@ -26,9 +26,9 @@ public class SurveyOption extends BaseEntity {
     private SurveyItem surveyItem;
 
     //선택지 값
-    //1, 2, 3
+    //1, 2, 3별 항목
     @Column(nullable = false)
-    private Integer value;
+    private String value;
 
     //선택지에 해당하는 co2
     @Column(nullable = false)

@@ -68,17 +68,17 @@ class SurveyServiceUnitTest {
         SurveyItem i5 = new SurveyItem(); i5.setSurveyItemId(5L); i5.setCode("전자기기");
 
         // 선택된 옵션 Mock
-        SurveyOption o1 = new SurveyOption(); o1.setSurveyItem(i1); o1.setValue(1); o1.setCo2kg(0.05);
-        SurveyOption o2 = new SurveyOption(); o2.setSurveyItem(i2); o2.setValue(2); o2.setCo2kg(0.12);
-        SurveyOption o3 = new SurveyOption(); o3.setSurveyItem(i3); o3.setValue(3); o3.setCo2kg(0.0);
-        SurveyOption o4 = new SurveyOption(); o4.setSurveyItem(i4); o4.setValue(2); o4.setCo2kg(0.02);
-        SurveyOption o5 = new SurveyOption(); o5.setSurveyItem(i5); o5.setValue(1); o5.setCo2kg(0.05);
+        SurveyOption o1 = new SurveyOption(); o1.setSurveyItem(i1); o1.setCo2kg(0.05);
+        SurveyOption o2 = new SurveyOption(); o2.setSurveyItem(i2); o2.setCo2kg(0.12);
+        SurveyOption o3 = new SurveyOption(); o3.setSurveyItem(i3); o3.setCo2kg(0.0);
+        SurveyOption o4 = new SurveyOption(); o4.setSurveyItem(i4);  o4.setCo2kg(0.02);
+        SurveyOption o5 = new SurveyOption(); o5.setSurveyItem(i5); o5.setCo2kg(0.05);
 
-        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(1L, 1)).thenReturn(Optional.of(o1));
-        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(2L, 2)).thenReturn(Optional.of(o2));
-        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(3L, 3)).thenReturn(Optional.of(o3));
-        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(4L, 2)).thenReturn(Optional.of(o4));
-        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(5L, 1)).thenReturn(Optional.of(o5));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(1L)).thenReturn(Optional.of(o1));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(2L)).thenReturn(Optional.of(o2));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(3L)).thenReturn(Optional.of(o3));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(4L)).thenReturn(Optional.of(o4));
+        when(optionRepository.findBySurveyItem_SurveyItemIdAndValue(5L)).thenReturn(Optional.of(o5));
 
         // maxCo2 Mock (상대점수 계산용)
         when(optionRepository.findMaxCo2ByItemId(1L)).thenReturn(0.05);

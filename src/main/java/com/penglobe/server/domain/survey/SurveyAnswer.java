@@ -29,7 +29,7 @@ public class SurveyAnswer extends BaseEntity {
 
     //사용자가 선택한 값
     @Column(nullable = false)
-    private Integer selectValues;
+    private String selectValues;
 
     //선택값 기반 co2
     @Column(nullable = false)
