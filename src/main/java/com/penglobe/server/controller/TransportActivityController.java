@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @RestController
@@ -52,12 +54,10 @@ public class TransportActivityController {
             @RequestParam int distanceM,
             @RequestBody(required = false) String pathGeojson
     ) {
-        TransportActivity activity = activityService.stopActivity(transportId, distanceM, pathGeojson);
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(ApiResponse.success(200, "이동을 종료했습니다.", TransportActivityDto.fromEntity(activity)));
+        TransportActivityDto dto = activityService.stopActivity(transportId, distanceM, pathGeojson);
+        return ResponseEntity.ok(ApiResponse.success(200, "이동을 종료했습니다.", dto));
     }
+
 
     @Operation(summary = "북마크 등록")
     @PostMapping("/bookmarks")

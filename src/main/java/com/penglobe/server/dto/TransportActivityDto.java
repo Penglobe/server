@@ -27,11 +27,17 @@ public class TransportActivityDto {
     @Schema(description = "이동 종료 시각 (ISO 8601)", example = "2025-08-25T08:30:00")
     private LocalDateTime endTime;
 
+    @Schema(description = "총 이동 시간 (분)", example = "30")
+    private int durationM;
+
     @Schema(description = "이동 거리 (미터)", example = "1200")
     private int distanceM;
 
     @Schema(description = "절감된 CO2 배출량 (kg)", example = "1.68")
     private BigDecimal co2Kg;
+
+    @Schema(description = "지급된 포인트", example = "120")
+    private int points;
 
     // Factory Method: Entity -> DTO
     public static TransportActivityDto fromEntity(TransportActivity entity) {
@@ -43,6 +49,20 @@ public class TransportActivityDto {
                 .endTime(entity.getEndTime())
                 .distanceM(entity.getDistanceM())
                 .co2Kg(entity.getCo2Kg())
+                .build();
+    }
+
+    public static TransportActivityDto fromEntity(TransportActivity entity, int durationM, int points) {
+        return TransportActivityDto.builder()
+                .transportId(entity.getTransportId())
+                .userId(entity.getUser().getUserId())
+                .mode(entity.getMode().name())
+                .startTime(entity.getStartTime())
+                .endTime(entity.getEndTime())
+                .durationM(durationM)
+                .distanceM(entity.getDistanceM())
+                .co2Kg(entity.getCo2Kg())
+                .points(points)
                 .build();
     }
 }
