@@ -54,15 +54,18 @@ public class SurveyService {
         double totalCo2 = 0;
         List<TopCo2DTO> co2List = new ArrayList<>();
 
+        System.out.println("@@@@@@@@@서비스@@@@@@@@@@" + dto.getUserId() + dto.getAnswer()) ;
+
         for (SurveyAnswerDTO a : dto.getAnswer()) {
-            SurveyOption option = optionRepository.findBySurveyItem_SurveyItemIdAndValue(a.getItemId(), a.getSelectValue())
-                    .orElseThrow(() -> new RuntimeException("선택지를 찾을 수 없습니다."));
+            SurveyOption option = (SurveyOption) optionRepository.findBySurveyItem_SurveyItemIdAndValue(a.getItemId(), a.getSelectValue())
+                    .orElseThrow(() -> new RuntimeException( "옵션을 찾을 수 없습니다. itemId=" + a.getItemId() + ", value=" + a.getSelectValue()));
 
             SurveyAnswer answer = new SurveyAnswer();
             answer.setSurveyResponse(response);
             answer.setSurveyItemId(option.getSurveyItem());
-            answer.setSelectValues(option.getValue());
             answer.setCo2kg(option.getCo2kg());
+            answer.setSelectValues(a.getSelectValue());
+            System.out.println("@@@@@@@@@@@@" + option.getSurveyItem() + option.getCo2kg());
 
             //answer를 response에 추가 => 그래서 totalCo2
             response.getAnswers().add(answer);
@@ -76,6 +79,7 @@ public class SurveyService {
         }
 
         response.setTotalCo2kg(totalCo2);
+        response.setSurveyDate(LocalDate.now());
         responseRepository.save(response);
 
     //상대점수 기준 Top3 선택
