@@ -4,8 +4,10 @@ import com.penglobe.server.domain.quiz.QuizQuestions;
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.repository.PointsLedgerRepository;
 import com.penglobe.server.repository.QuizQuestionRepository;
+import com.penglobe.server.repository.UserCountersRepository;
 import com.penglobe.server.repository.UserRepository;
 import com.penglobe.server.service.QuizQuestionService;
+import org.apache.catalina.startup.UserConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,19 +24,27 @@ public class QuizAnswerServiceUnitTest {
     private PointsLedgerRepository pointsLedgerRepository;
     private UserRepository userRepository;
     private QuizQuestionService quizService;
+    private UserCountersRepository userCountersRepository;
 
     @BeforeEach
     void setUp() {
         quizRepository = mock(QuizQuestionRepository.class);
         pointsLedgerRepository = mock(PointsLedgerRepository.class);
         userRepository = mock(UserRepository.class);
+        userCountersRepository = mock(UserCountersRepository.class);
 
-        quizService = new QuizQuestionService(quizRepository, pointsLedgerRepository, userRepository);
+        quizService = new QuizQuestionService(
+                quizRepository,
+                pointsLedgerRepository,
+                userRepository
+
+        );
     }
 
     @Test
     void testSubmitAnswer_WithSysOut() {
         Long userId = 1L;
+        Long quizId = 1L;
         Boolean userAnswer = true;
 
         // Mock 유저
