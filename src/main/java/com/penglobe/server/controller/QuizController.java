@@ -32,7 +32,6 @@ public class QuizController {
     public ResponseEntity<?> submitAnswer(@RequestBody QuizRequestDTO requestDTO) {
         Long userId = requestDTO.getUserId();
         Boolean answer = requestDTO.getAnswer();
-
         try {
             int points = quizQuestionService.submitAnswer(userId, answer);
             return ResponseEntity.ok(Map.of(

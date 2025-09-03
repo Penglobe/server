@@ -14,6 +14,7 @@ public interface SurveyOptionRepository extends JpaRepository<SurveyOption, Long
     @Query("SELECT MAX(o.co2kg) FROM SurveyOption o WHERE o.surveyItem.surveyItemId = :itemId")
     Double findMaxCo2ByItemId(@Param("itemId") Long itemId);
 
-    Optional<SurveyOption> findBySurveyItem_SurveyItemIdAndValue(Long itemId, Integer value);
+    Optional<SurveyOption> findBySurveyItem_SurveyItemIdAndValue(Long surveyItemId, String value);
+
     List<SurveyOption> findBySurveyItem_SurveyItemId(Long itemId);
 }

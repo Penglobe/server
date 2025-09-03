@@ -36,7 +36,7 @@ public class QuizQuestionService {
 
         //중복 제출 확인 및 메시지
         long submitted = pointsLedgerRepository.countTodayQuizSubmit(userId);
-        if(submitted > 2) {
+        if(submitted >= 1) {
             throw new IllegalStateException("오늘 퀴즈는 이미 제출했습니다. \n 포인트는 지급되지 않습니다.");
         }
 
