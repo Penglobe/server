@@ -25,4 +25,6 @@ public interface UserCountersRepository extends JpaRepository<UserCounters, Long
            "FROM UserCounters uc WHERE uc.user.regionId = :regionId")
     Optional<BigDecimal> sumTotalCo2ByRegionId(@Param("regionId") Integer regionId);
     Optional<UserCounters> findByUserId(Long userId);
+
+
 }

@@ -2,15 +2,14 @@ package com.penglobe.server.controller;
 
 import com.penglobe.server.domain.quiz.QuizQuestions;
 import com.penglobe.server.dto.QuizRequestDTO;
-import com.penglobe.server.dto.survey.SurveySubmitRequestDTO;
 import com.penglobe.server.service.QuizQuestionService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/quiz")
