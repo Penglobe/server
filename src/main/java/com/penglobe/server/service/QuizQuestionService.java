@@ -18,9 +18,6 @@ public class QuizQuestionService {
     final PointsLedgerRepository pointsLedgerRepository;
     private final UserRepository userRepository;
 
-
-    //랜덤으로 퀴즈 1개 선택
-
     // 오늘의 퀴즈 가져오기 (랜덤)
     public QuizQuestions getDailyQuiz() {
         Long minId = quizQuestionRepository.findMinId();
@@ -37,12 +34,18 @@ public class QuizQuestionService {
     public int submitAnswer(Long userId, Boolean userAnswer) {
         QuizQuestions quiz = getDailyQuiz();
 
+        //중복 제출 확인 및 메시지
+        long submitted = pointsLedgerRepository.countTodayQuizSubmit(userId);
+        if(submitted > 2) {
+            throw new IllegalStateException("오늘 퀴즈는 이미 제출했습니다. \n 포인트는 지급되지 않습니다.");
+        }
+
         // 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        int points = quiz.getIsAnswerTrue().equals(userAnswer) ? 1 : 10;
-
+        // 포인트 지급
+        int points = quiz.getIsAnswerTrue().equals(userAnswer) ? 10 : 1;
         user.setTotalPoint(user.getTotalPoint() + points);
 
         // PointsLedger 생성 후 저장
@@ -52,8 +55,4 @@ public class QuizQuestionService {
 
         return points;
     }
-
-
-
-
 }
