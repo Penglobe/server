@@ -8,9 +8,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/rankings")
@@ -25,9 +28,8 @@ public class RankingController {
             description = "현재 진행중인 주간 랭킹과 현재 로그인한 사용자의 랭킹 출력"
     )
     @GetMapping("/weekly")
-    public ResponseEntity<WeeklyRankingResponseDTO> getWeeklyRanking() {
-        // TODO: 아래는 임시 ID입니다. 실제 사용자 ID 필요
-        Long currentUserId = 114L; // 현재 로그인한 사용자의 ID (임시)
+    public ResponseEntity<WeeklyRankingResponseDTO> getWeeklyRanking(Authentication authentication) {
+        Long currentUserId = requireUserId(authentication);
 
         WeeklyRankingResponseDTO response = rankingService.getWeeklyRanking(currentUserId);
         return ResponseEntity.ok(response);
@@ -45,23 +47,39 @@ public class RankingController {
             description = "전체 랭킹과 현재 로그인한 사용자의 랭킹 출력"
     )
     @GetMapping("/global")
-    public ResponseEntity<WeeklyRankingResponseDTO> getAllRanking() {
-        // TODO: 아래는 임시 ID입니다. 실제 사용자 ID 필요
-        Long currentUserId = 114L; // 현재 로그인한 사용자의 ID (임시)
+    public ResponseEntity<WeeklyRankingResponseDTO> getAllRanking(Authentication authentication) {
+        Long currentUserId = requireUserId(authentication);
 
         WeeklyRankingResponseDTO response = rankingService.getAllRanking(currentUserId);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-            summary = "랭킹 데이터 수동 업데이트",
-            description = "주간, 전체, 지역별 랭킹 데이터를 수동으로 업데이트합니다. 테스트 및 디버깅용."
-    )
-    @GetMapping("/update-all")
-    public ResponseEntity<String> updateAllRankingsManually() {
-        rankingService.updateLiveWeeklyRanking();
-        rankingService.updateAllRanking();
-        rankingService.updateRegionRankings();
-        return ResponseEntity.ok("All rankings updated successfully!");
+    // @Operation(
+    //         summary = "랭킹 데이터 수동 업데이트",
+    //         description = "주간, 전체, 지역별 랭킹 데이터를 수동으로 업데이트합니다. 테스트 및 디버깅용."
+    // )
+    // @GetMapping("/update-all")
+    // public ResponseEntity<String> updateAllRankingsManually() {
+    //     rankingService.updateLiveWeeklyRanking();
+    //     rankingService.updateAllRanking();
+    //     rankingService.updateRegionRankings();
+    //     return ResponseEntity.ok("All rankings updated successfully!");
+    // }
+
+    private Long requireUserId(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
+        }
+        Object p = authentication.getPrincipal();
+        if (p instanceof Long l) return l;
+        if (p instanceof String s) {
+            try {
+                return Long.parseLong(s);
+            } catch (NumberFormatException e) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "잘못된 인증 주체 형식");
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 주체가 유효하지 않습니다.");
     }
 }
+
