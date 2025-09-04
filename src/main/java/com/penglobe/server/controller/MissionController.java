@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import static com.penglobe.server.domain.mission.MissionMetric.*;
@@ -29,8 +30,8 @@ public class MissionController {
                     + "윈도우의 앵커는 '마지막 수령 타겟'(없으면 startTarget)입니다."
     )
     public ResponseEntity<ApiResponse<Map<MissionMetric, List<MissionSlotDTO>>>> windows(
-            @Parameter(description = "사용자 ID", required = true, example = "123")
-            @RequestHeader("X-User-Id") Long userId) {
+            Authentication authentication) {
+        Long userId = (authentication == null) ? null : (Long) authentication.getPrincipal(); //JwtAuthenticationFilter에서 principal=userId로 넣음
 
         // 보기 좋은 고정 순서로 정렬해서 내려주고 싶으면 아래 사용
         Map<MissionMetric, List<MissionSlotDTO>> ordered = new LinkedHashMap<>();
@@ -54,8 +55,8 @@ public class MissionController {
             @RequestParam MissionMetric metric,
             @Parameter(description = "수령할 목표치(kg/days)", required = true, example = "40")
             @RequestParam long target,
-            @Parameter(description = "사용자 ID", required = true, example = "123")
-            @RequestHeader("X-User-Id") Long userId) {
+            Authentication authentication) {
+        Long userId = (authentication == null) ? null : (Long) authentication.getPrincipal();
 
         missionService.claim(userId, metric, target);
         return ResponseEntity

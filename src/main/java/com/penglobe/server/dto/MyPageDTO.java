@@ -8,6 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MyPageDTO {
+    private Long userId;
     private String nickname;
     private Integer totalPoint;
     private Integer attendanceTotalDays;
