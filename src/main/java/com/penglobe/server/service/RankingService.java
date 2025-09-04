@@ -188,10 +188,12 @@ public class RankingService {
         for (Regions region : allRegions) {
             BigDecimal totalCo2 = userCountersRepository.sumTotalCo2ByRegionId(region.getRegionId())
                     .orElse(BigDecimal.ZERO);
+            System.out.println("Region ID: " + region.getRegionId() + ", Calculated CO2: " + totalCo2);
             region.setTotalCo2kg(totalCo2);
         }
         // @Transactional에 의해 메서드 종료 시 자동으로 DB에 업데이트됨
         System.out.println("지역별 랭킹 점수 업데이트 완료. 처리된 지역 수: " + allRegions.size());
+        regionRepository.saveAll(allRegions);
     }
 
     /**
@@ -235,7 +237,12 @@ public class RankingService {
 
         // 2. 내 순위 조회
         MyRankingDTO myRank = weeklyRankingRepository.findByUserId(currentUserId)
-                .map(wr -> new MyRankingDTO(wr.getRanking(), wr.getScore()))
+                .map(wr -> {
+                    // Fetch user to get lastWeekRank
+                    User user = userRepository.findByUserId(currentUserId).orElse(null);
+                    Integer lastWeekRank = (user != null) ? user.getLastWeekRank() : null;
+                    return new MyRankingDTO(wr.getRanking(), wr.getScore(), lastWeekRank); // Pass lastWeekRank
+                })
                 .orElse(null); // 랭킹에 없으면 null
 
         return new WeeklyRankingResponseDTO(top10, myRank);
@@ -255,7 +262,7 @@ public class RankingService {
 
         // 2. 내 순위 조회
         MyRankingDTO myRank = allRankingRepository.findByUserId(currentUserId)
-                .map(ar -> new MyRankingDTO(ar.getRanking(), ar.getScore()))
+                .map(ar -> new MyRankingDTO(ar.getRanking(), ar.getScore(), null))
                 .orElse(null); // 랭킹에 없으면 null
 
         return new WeeklyRankingResponseDTO(top10, myRank);

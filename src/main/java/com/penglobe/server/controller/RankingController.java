@@ -27,9 +27,9 @@ public class RankingController {
     @GetMapping("/weekly")
     public ResponseEntity<WeeklyRankingResponseDTO> getWeeklyRanking() {
         // TODO: 아래는 임시 ID입니다. 실제 사용자 ID 필요
-        Long currentUserId = 1L; // 현재 로그인한 사용자의 ID (임시)
+        Long currentUserId = 114L; // 현재 로그인한 사용자의 ID (임시)
 
-        WeeklyRankingResponseDTO response = rankingService.getAllRanking(currentUserId);
+        WeeklyRankingResponseDTO response = rankingService.getWeeklyRanking(currentUserId);
         return ResponseEntity.ok(response);
     }
 
@@ -47,9 +47,21 @@ public class RankingController {
     @GetMapping("/global")
     public ResponseEntity<WeeklyRankingResponseDTO> getAllRanking() {
         // TODO: 아래는 임시 ID입니다. 실제 사용자 ID 필요
-        Long currentUserId = 1L; // 현재 로그인한 사용자의 ID (임시)
+        Long currentUserId = 114L; // 현재 로그인한 사용자의 ID (임시)
 
         WeeklyRankingResponseDTO response = rankingService.getAllRanking(currentUserId);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "랭킹 데이터 수동 업데이트",
+            description = "주간, 전체, 지역별 랭킹 데이터를 수동으로 업데이트합니다. 테스트 및 디버깅용."
+    )
+    @GetMapping("/update-all")
+    public ResponseEntity<String> updateAllRankingsManually() {
+        rankingService.updateLiveWeeklyRanking();
+        rankingService.updateAllRanking();
+        rankingService.updateRegionRankings();
+        return ResponseEntity.ok("All rankings updated successfully!");
     }
 }
