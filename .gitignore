@@ -38,3 +38,7 @@ out/
 
 ### Spring Boot Properties ###
 src/main/resources/application.properties
+src/main/resources/application-docker.properties
+
+### data.sql ###
+src/main/resources/data.sql
