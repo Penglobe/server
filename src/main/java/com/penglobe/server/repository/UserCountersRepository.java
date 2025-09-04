@@ -65,4 +65,5 @@ public interface UserCountersRepository extends JpaRepository<UserCounters, Long
                               @Param("streakDays") int streakDays,
                               @Param("monthDays") int monthDays);
 
+
 }

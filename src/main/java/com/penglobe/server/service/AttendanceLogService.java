@@ -19,16 +19,20 @@ public class AttendanceLogService {
     private final AttendanceLogRepository attendanceLogRepository;
     private final UserCountersRepository userCountersRepository;
 
+    /**
+     * 출석 등록 시도
+     * @return true = 오늘 첫 출석, false = 이미 출석한 경우
+     */
     @Transactional
-    public AttendanceLog markAttendance(User user, AttendanceType type) {
+    public boolean markAttendance(User user, AttendanceType type) {
         LocalDate today = LocalDate.now();
 
         // 하루 1회만 인정
         if (attendanceLogRepository.existsByUserAndDate(user, today)) {
-            throw new IllegalStateException("오늘 이미 출석이 등록되었습니다.");
+            return false; // 이미 출석 기록 있음 → 무시
         }
 
-        // 출석 로그 저장
+        // 새로운 출석 로그 저장
         AttendanceLog log = AttendanceLog.builder()
                 .user(user)
                 .date(today)
@@ -55,13 +59,12 @@ public class AttendanceLogService {
                 counters.getLastAttendanceDate().getYear() == today.getYear()) {
             monthDays = counters.getAttendanceMonthDays() + 1;
         } else {
-            monthDays = 1; // 새 달이면 리셋
+            monthDays = 1; // 새 달이면 초기화
         }
 
         // 벌크 업데이트 실행
         userCountersRepository.updateAttendanceStats(user, today, streakDays, monthDays);
 
-        return log;
+        return true; // 오늘 첫 출석 인정
     }
-
 }
