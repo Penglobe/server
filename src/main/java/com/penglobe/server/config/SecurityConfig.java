@@ -25,7 +25,10 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
-                        .requestMatchers("/auth/**").permitAll()     // 로그인/회원가입만 열기
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/shop/products", "/shop/products/**").permitAll()
                         .anyRequest().authenticated()                // 나머지는 JWT 필수
                 )
                 .exceptionHandling(ex -> ex
