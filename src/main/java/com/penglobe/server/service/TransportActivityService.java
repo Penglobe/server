@@ -1,5 +1,6 @@
 package com.penglobe.server.service;
 
+import com.penglobe.server.domain.attendance.AttendanceType;
 import com.penglobe.server.domain.ledger.LedgerReason;
 import com.penglobe.server.domain.ledger.PointsLedger;
 import com.penglobe.server.domain.transport.TransportActivity;
@@ -28,8 +29,11 @@ public class TransportActivityService {
     private final UserRepository userRepository;
     private final UserCountersRepository userCountersRepository;
     private final PointsLedgerRepository pointsLedgerRepository;
+    private final AttendanceLogService attendanceLogService;
 
-    // 이동 시작
+    /**
+     * 🚶 이동 시작
+     */
     @Transactional
     public TransportActivity startActivity(User user, TransportMode mode) {
         TransportActivity activity = TransportActivity.builder()
@@ -43,7 +47,9 @@ public class TransportActivityService {
         return activityRepository.save(activity);
     }
 
-    // 이동 종료 (거리, 경로 저장, CO₂ 절감량 계산)
+    /**
+     * 🏁 이동 종료 (거리, CO₂ 절감량, 포인트, 유저카운터, 출석 로그)
+     */
     @Transactional
     public TransportActivityDto stopActivity(Long transportId, int distanceM, String pathGeojson) {
         TransportActivity activity = activityRepository.findById(transportId)
@@ -52,7 +58,7 @@ public class TransportActivityService {
         activity.setEndTime(LocalDateTime.now());
         activity.setDistanceM(distanceM);
 
-        // 🚩 CO₂ 절감량
+        // 🚩 CO₂ 절감량 계산
         BigDecimal co2Kg = calculateCo2Saving(distanceM, activity.getMode());
         activity.setCo2Kg(co2Kg);
 
@@ -80,17 +86,27 @@ public class TransportActivityService {
             pointsLedgerRepository.save(ledger);
         }
 
+        // ✅ UserCounters에 환경걸음 누적 절감량 업데이트
+        userCountersRepository.addDistanceCo2(activity.getUser(), co2Kg);
+
+        // ✅ 출석 로그 (하루 1회만)
+        try {
+            attendanceLogService.markAttendance(activity.getUser(), AttendanceType.TRANSPORT_ACTIVITY);
+        } catch (IllegalStateException e) {
+            // 이미 오늘 출석이 있으면 무시
+        }
+
         activityRepository.save(activity);
 
-        // ✅ 여기서 DTO 조립
         return TransportActivityDto.fromEntity(activity, durationM, points);
     }
 
-
-
-    // CO₂ 절감량 계산 로직
+    /**
+     * 📊 CO₂ 절감량 계산 로직
+     */
     private BigDecimal calculateCo2Saving(int distanceM, TransportMode mode) {
-        BigDecimal km = BigDecimal.valueOf(distanceM).divide(BigDecimal.valueOf(1000), 4, RoundingMode.HALF_UP);
+        BigDecimal km = BigDecimal.valueOf(distanceM)
+                .divide(BigDecimal.valueOf(1000), 4, RoundingMode.HALF_UP);
 
         // 🚗 승용차 평균 배출량: 0.2 kg/km
         BigDecimal carCo2Kg = km.multiply(BigDecimal.valueOf(0.2));
@@ -104,5 +120,4 @@ public class TransportActivityService {
         return carCo2Kg.multiply(BigDecimal.valueOf(factor))
                 .setScale(2, RoundingMode.HALF_UP); // ✅ 소수점 둘째 자리까지
     }
-
 }
