@@ -76,6 +76,8 @@ INSERT INTO survey_option (survey_item_id, value, co2kg, created_at, updated_at)
                                                                             '조금 실천했다', 0, NOW(), NOW()),
                                                                               (6, '하지 않았다', 0, NOW(), NOW());
 
+delete from quiz;
+ALTER TABLE quiz AUTO_INCREMENT = 1;
 INSERT INTO quiz (question, is_answer_true, created_at, updated_at) VALUES
                                                 ('태양은 동쪽에서 뜬다.', TRUE, NOW(),NOW()),
                                                 ('물은 100도에서 끓는다.', TRUE,NOW(),NOW()),

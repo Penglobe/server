@@ -22,6 +22,9 @@ public class SurveyAnswer extends BaseEntity {
     @JoinColumn(name = "survey_response_id", nullable = false)
     private SurveyResponse surveyResponse;
 
+    @Column(nullable = false)
+    private Long userId;
+
     //항목id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_item_id", nullable = false)
