@@ -21,11 +21,16 @@ public class AuthDTO {
 
     // 공통 로그인 응답
     public static class AuthResponse {
-        public String token;
+        public String accessToken;       // 액세스 토큰 (JWT)
+        public String refreshToken;
         public boolean profileCompleted;
         public long userId;
-        public AuthResponse(String t, boolean pc, long id) {
-            this.token = t; this.profileCompleted = pc; this.userId = id;
+
+        public AuthResponse(String at, String rt, boolean pc, long id) {
+            this.accessToken = at;
+            this.refreshToken = rt;
+            this.profileCompleted = pc;
+            this.userId = id;
         }
     }
 
