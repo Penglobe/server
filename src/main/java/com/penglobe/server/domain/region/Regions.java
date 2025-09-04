@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @Table(name = "regions")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
-public class Regions extends BaseEntity {
+public class Regions {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
