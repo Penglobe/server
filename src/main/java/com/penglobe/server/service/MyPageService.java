@@ -34,6 +34,7 @@ public class MyPageService {
                 .orElseThrow(() -> new IllegalArgumentException("UserCounters not found for user ID: " + userId));
 
         return MyPageDTO.builder()
+                .userId(userId)
                 .nickname(user.getNickname())
                 .totalPoint(user.getTotalPoint())
                 .attendanceTotalDays(userCounters.getAttendanceTotalDays())
