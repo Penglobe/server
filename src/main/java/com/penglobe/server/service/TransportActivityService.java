@@ -14,6 +14,7 @@ import com.penglobe.server.repository.UserCountersRepository;
 import com.penglobe.server.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class TransportActivityService {
@@ -89,11 +91,12 @@ public class TransportActivityService {
         // ✅ UserCounters에 환경걸음 누적 절감량 업데이트
         userCountersRepository.addDistanceCo2(activity.getUser(), co2Kg);
 
-        // ✅ 출석 로그 (하루 1회만)
-        try {
-            attendanceLogService.markAttendance(activity.getUser(), AttendanceType.TRANSPORT_ACTIVITY);
-        } catch (IllegalStateException e) {
-            // 이미 오늘 출석이 있으면 무시
+        // 출석 로그 시도 (하루 1회만 인정)
+        boolean newAttendance = attendanceLogService.markAttendance(activity.getUser(), AttendanceType.TRANSPORT_ACTIVITY);
+        if (newAttendance) {
+            log.info("오늘 첫 출석 인정 ✅");
+        } else {
+            log.info("이미 오늘 출석함 → 무시");
         }
 
         activityRepository.save(activity);
