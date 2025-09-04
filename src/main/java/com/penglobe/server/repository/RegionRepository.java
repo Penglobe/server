@@ -10,4 +10,6 @@ import java.util.List;
 public interface RegionRepository extends JpaRepository<Regions, Integer> {
     @Query("SELECT new com.penglobe.server.dto.RegionDTO(r.regionId, r.name, r.totalCo2kg) FROM Regions r ORDER BY r.totalCo2kg DESC")
     List<RegionDTO> getRegionRankings();
+
+    List<Regions> findAllByOrderByNameAsc();
 }
