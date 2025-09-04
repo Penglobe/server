@@ -4,6 +4,7 @@ import com.penglobe.server.domain.ledger.LedgerReason;
 import com.penglobe.server.domain.ledger.PointsLedger;
 import com.penglobe.server.domain.quiz.QuizQuestions;
 import com.penglobe.server.domain.user.User;
+import com.penglobe.server.dto.QuizRequestDTO;
 import com.penglobe.server.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,29 +24,33 @@ public class QuizQuestionService {
         Long minId = quizQuestionRepository.findMinId();
         Long maxId = quizQuestionRepository.findMaxId();
 
-        long randomId = new Random().nextLong(minId, maxId + 1);
+        long randomQuizId = new Random().nextLong(minId, maxId + 1);
 
-        return quizQuestionRepository.findRandomQuiz(randomId)
+        return quizQuestionRepository.findRandomQuiz(randomQuizId)
                 .orElseThrow(() -> new RuntimeException("퀴즈를 찾을 수 없습니다."));
     }
 
     // 답 제출 + 포인트 적립
-    @Transactional
-    public int submitAnswer(Long userId, Boolean userAnswer) {
-        QuizQuestions quiz = getDailyQuiz();
+    public int submitAnswer(Boolean userAnswer, QuizRequestDTO request) {
 
         //중복 제출 확인 및 메시지
-        long submitted = pointsLedgerRepository.countTodayQuizSubmit(userId);
+        long submitted = pointsLedgerRepository.countTodayQuizSubmit(request.getUserId());
         if(submitted >= 1) {
             throw new IllegalStateException("오늘 퀴즈는 이미 제출했습니다. \n 포인트는 지급되지 않습니다.");
         }
 
+        long quizId = request.getQuizId();
+
+        Boolean correctAnswer = quizQuestionRepository.findByQuizId(quizId)
+                .map(QuizQuestions::getIsAnswerTrue)
+                .orElseThrow(() -> new RuntimeException("퀴즈없음"));
+
         // 사용자 조회
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // 포인트 지급
-        int points = quiz.getIsAnswerTrue().equals(userAnswer) ? 10 : 1;
+        int points = (correctAnswer != null && correctAnswer.equals(userAnswer)) ? 10 : 1;
         user.setTotalPoint(user.getTotalPoint() + points);
 
         // PointsLedger 생성 후 저장
