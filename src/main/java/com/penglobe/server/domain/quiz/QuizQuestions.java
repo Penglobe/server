@@ -2,14 +2,11 @@ package com.penglobe.server.domain.quiz;
 
 
 import com.penglobe.server.domain.BaseEntity;
-import com.penglobe.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name="quiz")
@@ -27,6 +24,6 @@ public class QuizQuestions extends BaseEntity {
     private String question;
 
     @Column(name = "is_answer_true", nullable = false)
-    private Boolean isAnswerTrue;
-    
+    private Boolean  isAnswerTrue;
+
 }

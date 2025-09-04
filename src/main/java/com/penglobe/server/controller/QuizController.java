@@ -30,10 +30,9 @@ public class QuizController {
     @PostMapping("/submit")
     @Operation(summary = "퀴즈 답 제출 및 포인트 적립", description = "사용자가 퀴즈 답을 제출하면 포인트가 적립됩니다. 정답 10포인트, 오답 1포인트")
     public ResponseEntity<?> submitAnswer(@RequestBody QuizRequestDTO requestDTO) {
-        Long userId = requestDTO.getUserId();
         Boolean answer = requestDTO.getAnswer();
         try {
-            int points = quizQuestionService.submitAnswer(userId, answer);
+            int points = quizQuestionService.submitAnswer(answer,requestDTO);
             return ResponseEntity.ok(Map.of(
                     "points", points,
                     "message", ""

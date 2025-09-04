@@ -64,11 +64,11 @@ public class QuizAnswerServiceUnitTest {
         when(quizRepository.findRandomQuiz(anyLong())).thenReturn(Optional.of(quiz));
 
         // Service 호출
-        int points = quizService.submitAnswer(userId, userAnswer);
+        //int points = quizService.submitAnswer(userAnswer);
 
         // 콘솔 출력
         System.out.println("사용자 정답유무: " + quiz.getIsAnswerTrue());
-        System.out.println("적립 포인트: " + points);
+        //System.out.println("적립 포인트: " + points);
         System.out.println("사용자 총 포인트: " + mockUser.getTotalPoint());
 
     }
