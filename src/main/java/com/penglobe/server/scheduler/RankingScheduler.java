@@ -4,12 +4,22 @@ import com.penglobe.server.service.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
 
 @Component
 @RequiredArgsConstructor
 public class RankingScheduler {
 
     private final RankingService rankingService;
+
+    @PostConstruct
+    public void init() {
+        System.out.println("Performing initial ranking update on startup...");
+        rankingService.updateLiveWeeklyRanking();
+        rankingService.updateAllRanking();
+        rankingService.updateRegionRankings();
+        System.out.println("Initial ranking update complete.");
+    }
 
     /**
      * 5분마다 실시간 랭킹을 갱신합니다.
