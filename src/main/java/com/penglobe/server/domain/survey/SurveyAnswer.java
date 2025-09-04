@@ -38,4 +38,5 @@ public class SurveyAnswer extends BaseEntity {
     @Column(nullable = false)
     private Double co2kg;
 
+
 }
