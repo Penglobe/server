@@ -38,3 +38,6 @@ out/
 
 ### Spring Boot Properties ###
 src/main/resources/application.properties
+
+### data.sql ###
+src/main/resources/data.sql
