@@ -12,4 +12,11 @@ public class TopCo2DTO {
     private Double relativeScore; //top3 선정 용 상대점수
     private Double co2kg;
     private String code;
+
+    public TopCo2DTO(String code) {
+        this.code = code;
+        this.co2kg = 0.0;
+        this.relativeScore = 0.0;
+    }
+
 }
