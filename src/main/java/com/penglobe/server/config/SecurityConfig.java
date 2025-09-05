@@ -28,7 +28,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/shop/products", "/shop/products/**").permitAll()
+                                "/shop/products", "/shop/products/**", "/rankings/regions", "/uploads/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()                // 나머지는 JWT 필수
                 )
                 .exceptionHandling(ex -> ex
