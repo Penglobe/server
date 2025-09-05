@@ -21,6 +21,7 @@ public class QuizQuestionService {
 
     // 오늘의 퀴즈 가져오기 (랜덤)
     public QuizQuestions getDailyQuiz() {
+
         Long minId = quizQuestionRepository.findMinId();
         Long maxId = quizQuestionRepository.findMaxId();
 
