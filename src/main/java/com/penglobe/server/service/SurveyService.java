@@ -51,7 +51,7 @@ public class SurveyService {
     }
 
     public SurveyResultDTO submitSurvey(SurveySubmitRequestDTO dto) {
-        //중복 제출 체크
+        // 오늘 날짜 구간
         LocalDateTime today = LocalDateTime.now();
         LocalDateTime startOfDay = today.toLocalDate().atStartOfDay();
         LocalDateTime endOfDay = today.toLocalDate().atTime(LocalTime.MAX);
@@ -60,31 +60,32 @@ public class SurveyService {
         List<SurveyResponse> todayResponses = responseRepository
                 .findByUserIdAndCreatedAtBetween(dto.getUserId(), startOfDay, endOfDay);
 
+        // ✅ 이미 제출한 경우 → 저장하지 않고 기존 결과 반환
         if (!todayResponses.isEmpty()) {
-            System.out.println("S################################이미 제출됨");
+            //System.out.println("S################################이미 제출됨");
 
-            // 이미 제출된 경우, 최신 제출 결과를 DTO로 만들어 반환
-            SurveyResponse latest = todayResponses.get(todayResponses.size() - 1); // 최신
+            SurveyResponse latest = todayResponses.get(todayResponses.size() - 1);
             List<TopCo2DTO> top3 = new ArrayList<>();
             if (latest.getTop1() != null) top3.add(new TopCo2DTO(latest.getTop1()));
             if (latest.getTop2() != null) top3.add(new TopCo2DTO(latest.getTop2()));
             if (latest.getTop3() != null) top3.add(new TopCo2DTO(latest.getTop3()));
 
-            // null 반환 대신, 이미 제출된 오늘의 SurveyResultDTO를 반환
             return new SurveyResultDTO(latest.getTotalCo2kg(), dto.getUserId(), top3, true);
         }
 
-        //새로운 surveyResponse entity 생성 -> 설문 제출 기록용
+        // --- 여기서부터는 '첫 제출'일 때만 실행 ---
         SurveyResponse response = new SurveyResponse();
         response.setUserId(dto.getUserId());
 
-        //항목별 상새 점수 계산용
         List<TopCo2DTO> co2List = new ArrayList<>();
         double totalCo2 = 0;
 
         for (SurveyAnswerDTO a : dto.getAnswer()) {
-            SurveyOption option = (SurveyOption) optionRepository.findBySurveyItem_SurveyItemIdAndValue(a.getItemId(), a.getSelectValue())
-                    .orElseThrow(() -> new RuntimeException( "옵션을 찾을 수 없습니다. itemId=" + a.getItemId() + ", value=" + a.getSelectValue()));
+            SurveyOption option = optionRepository
+                    .findBySurveyItem_SurveyItemIdAndValue(a.getItemId(), a.getSelectValue())
+                    .orElseThrow(() -> new RuntimeException(
+                            "옵션을 찾을 수 없습니다. itemId=" + a.getItemId() + ", value=" + a.getSelectValue()
+                    ));
 
             SurveyAnswer answer = new SurveyAnswer();
             answer.setSurveyResponse(response);
@@ -93,48 +94,45 @@ public class SurveyService {
             answer.setSelectValues(a.getSelectValue());
             answer.setUserId(dto.getUserId());
 
-            //answer를 response에 추가 => 그래서 totalCo2
             response.getAnswers().add(answer);
 
-            // 항목별 최대 CO₂ 조회 (상대점수 계산)
+            // 상대점수 계산
             double maxCo2 = optionRepository.findMaxCo2ByItemId(option.getSurveyItem().getSurveyItemId());
             double relativeScore = maxCo2 == 0 ? 0 : option.getCo2kg() / maxCo2;
 
-            //topco2dto에 상대점수, 총 co2, code 저장
             co2List.add(new TopCo2DTO(relativeScore, option.getCo2kg(), option.getSurveyItem().getCode()));
 
             totalCo2 += option.getCo2kg();
-
-            totalCo2 = Math.round(totalCo2*100.0) / 100.0;
+            totalCo2 = Math.round(totalCo2 * 100.0) / 100.0;
         }
 
         response.setTotalCo2kg(totalCo2);
         responseRepository.save(response);
 
-        //user_counters에 저장
-        //누적 설문조사 co2
+        // ✅ UserCounters도 첫 제출일 때만 업데이트
         UserCounters userCounters = userCountersRepository.findByUserId(dto.getUserId())
                 .orElseGet(() -> {
                     UserCounters c = new UserCounters();
                     c.setUserId(dto.getUserId());
-                    c.setTotalSurveyCo2Kg(BigDecimal.valueOf(response.getTotalCo2kg()));
+                    c.setTotalSurveyCo2Kg(BigDecimal.ZERO);
                     return c;
                 });
+
         BigDecimal newTotal = userCounters.getTotalSurveyCo2Kg().add(BigDecimal.valueOf(totalCo2));
         userCounters.setTotalSurveyCo2Kg(newTotal);
         userCountersRepository.save(userCounters);
 
-    //상대점수 기준 Top3 선택
+        // Top3 선정
         List<TopCo2DTO> top3 = co2List.stream()
                 .sorted((o1, o2) -> Double.compare(o2.getRelativeScore(), o1.getRelativeScore()))
                 .limit(3)
                 .collect(Collectors.toList());
 
-        //response에 top1, 2, 3 저장
         response.setTop1(top3.size() > 0 ? top3.get(0).getCode() : null);
         response.setTop2(top3.size() > 1 ? top3.get(1).getCode() : null);
         response.setTop3(top3.size() > 2 ? top3.get(2).getCode() : null);
 
-        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false );
+        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false);
     }
+
 }
