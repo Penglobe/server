@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 public interface SurveyResponseRepository extends JpaRepository<SurveyResponse, Long> {
     //사용자의 설문 응답 저장
@@ -16,7 +18,11 @@ public interface SurveyResponseRepository extends JpaRepository<SurveyResponse, 
     @Query("SELECT COALESCE(SUM(s.totalCo2kg), 0) FROM SurveyResponse s WHERE s.userId = :userId AND s.createdAt BETWEEN :startDate AND :endDate")
     BigDecimal sumTotalCo2KgByUserAndPeriod(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
+    List<SurveyResponse> findAllByUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+            Long userId, LocalDateTime start, LocalDateTime end);
+
     boolean existsByUserIdAndCreatedAtBetween(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay);
 
 
+    List<SurveyResponse> findByUserIdAndCreatedAtBetween(Long userId, LocalDateTime createdAtAfter, LocalDateTime createdAtBefore);
 }

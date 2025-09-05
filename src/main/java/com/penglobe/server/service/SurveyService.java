@@ -10,6 +10,7 @@ import com.penglobe.server.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,14 +56,23 @@ public class SurveyService {
         LocalDateTime startOfDay = today.toLocalDate().atStartOfDay();
         LocalDateTime endOfDay = today.toLocalDate().atTime(LocalTime.MAX);
 
-        boolean alreadyExists = responseRepository.existsByUserIdAndCreatedAtBetween(
-                dto.getUserId(), startOfDay, endOfDay
-        );
+        // 오늘 제출된 설문 조회
+        List<SurveyResponse> todayResponses = responseRepository
+                .findByUserIdAndCreatedAtBetween(dto.getUserId(), startOfDay, endOfDay);
 
-//        if (alreadyExists) {
-//            System.out.println("S################################이미 제출됨");
-//            return null;
-//        }
+        if (!todayResponses.isEmpty()) {
+            System.out.println("S################################이미 제출됨");
+
+            // 이미 제출된 경우, 최신 제출 결과를 DTO로 만들어 반환
+            SurveyResponse latest = todayResponses.get(todayResponses.size() - 1); // 최신
+            List<TopCo2DTO> top3 = new ArrayList<>();
+            if (latest.getTop1() != null) top3.add(new TopCo2DTO(latest.getTop1()));
+            if (latest.getTop2() != null) top3.add(new TopCo2DTO(latest.getTop2()));
+            if (latest.getTop3() != null) top3.add(new TopCo2DTO(latest.getTop3()));
+
+            // null 반환 대신, 이미 제출된 오늘의 SurveyResultDTO를 반환
+            return new SurveyResultDTO(latest.getTotalCo2kg(), dto.getUserId(), top3, true);
+        }
 
         //새로운 surveyResponse entity 생성 -> 설문 제출 기록용
         SurveyResponse response = new SurveyResponse();
@@ -94,6 +104,7 @@ public class SurveyService {
             co2List.add(new TopCo2DTO(relativeScore, option.getCo2kg(), option.getSurveyItem().getCode()));
 
             totalCo2 += option.getCo2kg();
+
             totalCo2 = Math.round(totalCo2*100.0) / 100.0;
         }
 
@@ -124,6 +135,6 @@ public class SurveyService {
         response.setTop2(top3.size() > 1 ? top3.get(1).getCode() : null);
         response.setTop3(top3.size() > 2 ? top3.get(2).getCode() : null);
 
-        return new SurveyResultDTO(totalCo2, top3);
+        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false );
     }
 }

@@ -11,5 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 public class SurveyResultDTO {
     private Double totalCo2; //최종 배출량
+    private Long userId;
     private List<TopCo2DTO> top3; //co2 배출량이 높은 상위 3개 항목의 정보
+    private boolean submitted;
 }
