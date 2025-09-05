@@ -39,8 +39,9 @@ public class User extends BaseEntity {
     @Column(name = "total_point", nullable = false)
     private Integer totalPoint = 0; // 보유 포인트 캐시
 
-    @Column(name = "profile_id")
-    private Integer profileId;
+    @Column(name = "profile", length = 64, nullable = false)
+    @Builder.Default
+    private String profile = "ToryFace";
 
     @Column(name = "kakao_id")
     private Long kakaoId;
