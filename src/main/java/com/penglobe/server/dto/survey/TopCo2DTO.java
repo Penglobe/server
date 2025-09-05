@@ -15,8 +15,8 @@ public class TopCo2DTO {
 
     public TopCo2DTO(String code) {
         this.code = code;
-        this.co2kg = 0.0;
-        this.relativeScore = 0.0;
+        this.co2kg = co2kg;
+        this.relativeScore = relativeScore;
     }
 
 }
