@@ -36,12 +36,8 @@ public class SurveyController {
     @Operation(summary = "설문 제출/Top3", description = "사용자가 설문을 제출하면 총 CO2와 Top3 항목을 계산합니다.")
     @PostMapping("/submit/{userId}")
     public ResponseEntity<?> submitSurvey(@RequestBody SurveySubmitRequestDTO dto) {
-   SurveyResultDTO result = surveyService.submitSurvey(dto);
+       SurveyResultDTO result = surveyService.submitSurvey(dto);
 
-
-
-    return ResponseEntity.ok(ApiResponse.success(result));
-
-
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 }
