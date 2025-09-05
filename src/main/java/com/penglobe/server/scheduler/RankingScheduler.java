@@ -2,6 +2,7 @@ package com.penglobe.server.scheduler;
 
 import com.penglobe.server.service.RankingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
@@ -11,14 +12,28 @@ import jakarta.annotation.PostConstruct;
 public class RankingScheduler {
 
     private final RankingService rankingService;
+    private boolean initialized = false; // Add this line
 
+    @Async
     @PostConstruct
     public void init() {
-        System.out.println("Performing initial ranking update on startup...");
+        System.out.println("Performing initial data setup on startup...");
+        rankingService.selectWeeklyParticipants(); // Select participants first
         rankingService.updateLiveWeeklyRanking();
         rankingService.updateAllRanking();
         rankingService.updateRegionRankings();
-        System.out.println("Initial ranking update complete.");
+        System.out.println("Initial data setup complete.");
+        initialized = true; // Set to true after initialization
+    }
+
+    /**
+     * 매주 월요일 0시 1분에 주간 랭킹 참여자를 선정합니다.
+     */
+    @Scheduled(cron = "0 1 0 * * MON")
+    public void scheduleWeeklyParticipantSelection() {
+        System.out.println("Selecting weekly ranking participants...");
+        rankingService.selectWeeklyParticipants();
+        System.out.println("Weekly ranking participant selection complete.");
     }
 
     /**
@@ -34,6 +49,7 @@ public class RankingScheduler {
      */
     @Scheduled(cron = "0 5 0 * * MON")
     public void scheduleWeeklyFinalization() {
+        if (!initialized) return; // Add this line
         rankingService.finalizeWeeklyRanking();
     }
 

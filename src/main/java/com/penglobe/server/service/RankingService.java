@@ -2,9 +2,10 @@ package com.penglobe.server.service;
 
 import com.penglobe.server.domain.ranking.AllRanking;
 import com.penglobe.server.domain.ranking.WeeklyRanking;
+import com.penglobe.server.domain.ranking.WeeklyRankingParticipant;
 import com.penglobe.server.domain.region.Regions;
 import com.penglobe.server.domain.user.User;
-import com.penglobe.server.dto.UserTotalScoreDTO;
+import com.penglobe.server.dto.MyPageDTO;
 import com.penglobe.server.dto.ranking.MyRankingDTO;
 import com.penglobe.server.dto.ranking.RankingInfoDTO;
 import com.penglobe.server.dto.ranking.WeeklyRankingResponseDTO;
@@ -31,6 +32,7 @@ public class RankingService {
     private final UserRepository userRepository;
     private final UserCountersRepository userCountersRepository;
     private final WeeklyRankingRepository weeklyRankingRepository;
+    private final WeeklyRankingParticipantRepository weeklyRankingParticipantRepository;
     private final AllRankingRepository allRankingRepository;
     private final TransportActivityRepository transportActivityRepository;
     private final DietRecordRepository dietRecordRepository;
@@ -40,18 +42,55 @@ public class RankingService {
     // 사용자 점수를 임시로 저장하기 위한 내부 record
     private record UserScore(User user, BigDecimal score) {}
 
+    @Transactional
+    public void selectWeeklyParticipants() {
+        LocalDate today = LocalDate.now();
+        LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
+
+        // 1. Try to find users who ranked last week.
+        List<User> participants = userRepository.findUsersWithLastWeekRank();
+
+        // 2. If no one ranked last week (cold start or error), use fallback.
+        if (participants.isEmpty()) {
+            System.out.println("No users with last week's rank found. Using fallback rule (active in last 7 days).");
+            LocalDate sevenDaysAgo = today.minusDays(7);
+            participants = userCountersRepository.findUsersActiveSince(sevenDaysAgo);
+        }
+
+        // 3. Store the selected participants for the week.
+        weeklyRankingParticipantRepository.deleteAllInBatch();
+        List<WeeklyRankingParticipant> participantEntities = participants.stream()
+                .map(user -> WeeklyRankingParticipant.builder()
+                        .userId(user.getUserId())
+                        .weekStartDate(startOfWeek)
+                        .build())
+                .toList();
+        weeklyRankingParticipantRepository.saveAll(participantEntities);
+
+        System.out.println("Selected " + participantEntities.size() + " participants for the week starting " + startOfWeek);
+    }
+
     /**
      * 실시간 주간 랭킹을 업데이트하는 로직
      */
     @Transactional
     public void updateLiveWeeklyRanking() {
-        // 1. 날짜 범위 정의
+        // 1. Get the fixed list of participants for this week.
+        List<Long> participantUserIds = weeklyRankingParticipantRepository.findAll().stream()
+                .map(WeeklyRankingParticipant::getUserId)
+                .toList();
+
+        if (participantUserIds.isEmpty()) {
+            System.out.println("No participants found for the current weekly ranking. Skipping update.");
+            weeklyRankingRepository.deleteAllInBatch(); // Ensure the ranking table is clear
+            return;
+        }
+
+        List<User> activeUsers = userRepository.findAllById(participantUserIds);
+
+        // 2. 날짜 범위 정의
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfWeek = now.with(DayOfWeek.MONDAY).toLocalDate().atStartOfDay();
-        LocalDate sevenDaysAgo = now.toLocalDate().minusDays(7);
-
-        // 2. 랭킹 대상 사용자 조회
-        List<User> activeUsers = userCountersRepository.findUsersActiveSince(sevenDaysAgo);
 
         // 3. 사용자별 점수 계산
         List<UserScore> userScores = new ArrayList<>();
@@ -62,10 +101,7 @@ public class RankingService {
 
             BigDecimal totalScore = transportScore.add(dietScore).add(surveyScore);
 
-            // 절감량이 0보다 큰 사용자만 랭킹에 포함
-            if (totalScore.compareTo(BigDecimal.ZERO) > 0) {
-                userScores.add(new UserScore(user, totalScore));
-            }
+            userScores.add(new UserScore(user, totalScore));
         }
 
         // 4. 점수 기준으로 내림차순 정렬
@@ -97,6 +133,8 @@ public class RankingService {
         weeklyRankingRepository.saveAll(weeklyRankings);
 
         System.out.println("실시간 랭킹 업데이트 완료. 처리된 사용자 수: " + weeklyRankings.size());
+        // Debugging: Log the content of weeklyRankings after saving
+        weeklyRankings.forEach(wr -> System.out.println("Saved WeeklyRanking: userId=" + wr.getUserId() + ", nickname=" + wr.getNickname() + ", score=" + wr.getScore() + ", rank=" + wr.getRanking()));
     }
 
     /**
@@ -131,8 +169,7 @@ public class RankingService {
         }
         // userRepository.saveAll(usersToUpdate); // @Transactional에 의해 자동 저장
 
-        // 4. 이번 주를 위해 실시간 랭킹 테이블 비우기
-        weeklyRankingRepository.deleteAllInBatch();
+        
 
         System.out.println("주간 랭킹 마감 완료. 처리된 사용자 수: " + usersToUpdate.size());
     }
@@ -143,12 +180,12 @@ public class RankingService {
     @Transactional
     public void updateAllRanking() {
         // 1. DB에서 직접 합산 및 정렬된 점수 목록 조회
-        List<UserTotalScoreDTO> userScores = userCountersRepository.findUserTotalScores();
+        List<MyPageDTO> userScores = userCountersRepository.findUserTotalScores();
 
         // 2. 순위 부여 및 AllRanking 엔티티 생성
         List<AllRanking> allRankings = new ArrayList<>();
         for (int i = 0; i < userScores.size(); i++) {
-            UserTotalScoreDTO current = userScores.get(i);
+            MyPageDTO current = userScores.get(i);
 
             // 점수가 0 이하인 사용자는 랭킹에서 제외
             if (current.getTotalScore() == null || current.getTotalScore().compareTo(BigDecimal.ZERO) <= 0) {
