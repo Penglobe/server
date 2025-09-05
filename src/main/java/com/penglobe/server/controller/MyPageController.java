@@ -9,10 +9,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -36,10 +33,17 @@ public class MyPageController {
     public ResponseEntity<ApiResponse<DailyCarbonReductionDTO>> getDailyCarbonReduction(
             Authentication authentication,
             @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
-        Long userId = (Long) authentication.getPrincipal(); // Placeholder: Adjust based on actual UserDetails implementation
+        Long userId = requireUserId(authentication);
 
         DailyCarbonReductionDTO dailyReduction = myPageService.getDailyCarbonReduction(userId, date);
         return ResponseEntity.ok(ApiResponse.success(dailyReduction));
+    }
+
+    @PostMapping("/add-dummy-data")
+    public ResponseEntity<ApiResponse<Void>> addDummyData(Authentication authentication) {
+        Long userId = requireUserId(authentication);
+        myPageService.addDummyData(userId);
+        return ResponseEntity.ok(ApiResponse.success(200, "더미 데이터 추가 성공", null));
     }
 
     // ── 공통: Authentication에서 userId(Long) 안전하게 뽑기 ──

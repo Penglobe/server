@@ -2,7 +2,7 @@ package com.penglobe.server.repository;
 
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.domain.user.UserCounters;
-import com.penglobe.server.dto.UserTotalScoreDTO;
+import com.penglobe.server.dto.MyPageDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,11 +18,11 @@ public interface UserCountersRepository extends JpaRepository<UserCounters, Long
     @Query("SELECT uc.user FROM UserCounters uc WHERE uc.lastAttendanceDate >= :sevenDaysAgo")
     List<User> findUsersActiveSince(@Param("sevenDaysAgo") LocalDate sevenDaysAgo);
 
-    @Query("SELECT new com.penglobe.server.dto.UserTotalScoreDTO(uc.userId, uc.user.nickname, " +
-            "CAST((uc.totalDistanceCo2Kg + uc.totalDietCo2Kg + uc.totalSurveyCo2Kg) AS bigdecimal)) " +
+    @Query("SELECT new com.penglobe.server.dto.MyPageDTO(uc.userId, uc.user.nickname, " +
+            "CAST((uc.totalDistanceCo2Kg + uc.totalDietCo2Kg + uc.totalSurveyCo2Kg) AS java.math.BigDecimal)) " +
             "FROM UserCounters uc " +
             "ORDER BY (uc.totalDistanceCo2Kg + uc.totalDietCo2Kg + uc.totalSurveyCo2Kg) DESC")
-    List<UserTotalScoreDTO> findUserTotalScores();
+    List<MyPageDTO> findUserTotalScores();
 
     @Query("SELECT SUM(COALESCE(uc.totalDistanceCo2Kg, 0) + COALESCE(uc.totalDietCo2Kg, 0) + COALESCE(uc.totalSurveyCo2Kg, 0)) " +
             "FROM UserCounters uc WHERE uc.user.regionId = :regionId")

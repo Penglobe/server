@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -15,6 +16,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByKakaoId(Long kakaoId);
     boolean existsByEmail(String email);
     boolean existsByKakaoId(Long kakaoId);
+
+    @Query("SELECT u FROM User u WHERE u.lastWeekRank IS NOT NULL AND u.lastWeekRank > 0")
+    List<User> findUsersWithLastWeekRank();
 
     @Modifying
     @Transactional
