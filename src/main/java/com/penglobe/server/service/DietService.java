@@ -3,7 +3,7 @@ package com.penglobe.server.service;
 import com.penglobe.server.domain.diet.DietRecord;
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.domain.user.UserCounters;
-import com.penglobe.server.dto.DietDTO;
+import com.penglobe.server.dto.diet.DietDTO;
 import com.penglobe.server.repository.DietRecordRepository;
 import com.penglobe.server.repository.UserCountersRepository;
 import com.penglobe.server.repository.UserRepository;
