@@ -44,7 +44,7 @@ public class AuthDTO {
         public String nickname;
         @NotNull
         public Integer regionId;
-        public Integer profileId;
+        public String profile;
     }
 
     // 자체 로그인
@@ -59,7 +59,7 @@ public class AuthDTO {
     public static class CompleteProfileRequest {
         @NotNull public Integer regionId;      // 지역 필수
         @NotBlank @Size(max = 50) public String nickname;
-        public Integer profileId;                  // 선택
+        public String profile;                  // 선택
     }
 }
 

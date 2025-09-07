@@ -50,7 +50,7 @@ class AuthServiceSignupLocalUnitTest {
         req.password = "Password123!";
         req.nickname = "테스터";
         req.regionId = 101;
-        req.profileId = 9;
+        req.profile = 9;
 
         when(userRepository.existsByEmail(req.email)).thenReturn(false);
         when(passwordEncoder.encode(req.password)).thenReturn("ENCODED_PW");
