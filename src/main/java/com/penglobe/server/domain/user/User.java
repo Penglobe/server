@@ -1,11 +1,8 @@
 package com.penglobe.server.domain.user;
 
 import com.penglobe.server.domain.BaseEntity;
-import com.penglobe.server.domain.user.UserType;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDate;
 
 @Entity
 @Table(name = "users")
@@ -40,8 +37,7 @@ public class User extends BaseEntity {
     private Integer totalPoint = 0; // 보유 포인트 캐시
 
     @Column(name = "profile", length = 64, nullable = false)
-    @Builder.Default
-    private String profile = "ToryFace";
+    private String profile; // 기본값 제거 → PrePersist에서 보장
 
     @Column(name = "kakao_id")
     private Long kakaoId;
@@ -52,4 +48,23 @@ public class User extends BaseEntity {
 
     @Column(name = "last_week_rank")
     private Integer lastWeekRank; // 지난 주 최종 랭킹
+
+    /**
+     * DB에 INSERT 되기 전에 null 값들을 기본값으로 채움
+     */
+    @PrePersist
+    public void prePersist() {
+        if (this.type == null) {
+            this.type = UserType.USER;
+        }
+        if (this.totalPoint == null) {
+            this.totalPoint = 0;
+        }
+        if (this.profile == null) {
+            this.profile = "ToryFace";
+        }
+        if (this.isProfileComplete == null) {
+            this.isProfileComplete = false;
+        }
+    }
 }
