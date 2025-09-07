@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <title>Kakao Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style>
+        html, body, #map { margin:0; padding:0; width:100%; height:100%; }
+    </style>
+    <!-- ✅ Kakao JS SDK -->
+    <script th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoApiKey}&autoload=false|"></script>
+</head>
+<body>
+<div id="map"></div>
+
+<script th:inline="javascript">
+    kakao.maps.load(function() {
+        /* ✅ RN 로그로도 전달할 수 있는 helper */
+        function log(msg, obj) {
+            console.log(msg, obj || "");
+            if (window.ReactNativeWebView) {
+                try {
+                    window.ReactNativeWebView.postMessage(
+                        JSON.stringify({ msg, data: obj || null })
+                    );
+                } catch (e) {
+                    console.log("postMessage error", e);
+                }
+            }
+        }
+
+        /* ✅ 서버에서 파라미터 받음 */
+        var startLat = [[${startLat}]];
+        var startLng = [[${startLng}]];
+        var endLat = [[${endLat}]];
+        var endLng = [[${endLng}]];
+        var currentLat = [[${currentLat}]];
+        var currentLng = [[${currentLng}]];
+
+        log("📌 Params from server", { startLat, startLng, endLat, endLng, currentLat, currentLng });
+
+        /* ✅ SVG 정의 → Data URL 변환 */
+        function svgToDataUrl(svg) {
+            return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+        }
+
+        var startSvg = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24">
+            <circle cx="12" cy="10" r="8" fill="#318643" stroke="black" stroke-width="1"/>
+            <path d="M12 22 C10 18, 14 18, 12 22 Z" fill="#318643" stroke="black" stroke-width="1"/>
+            <text x="12" y="10" text-anchor="middle" dominant-baseline="middle"
+                  font-size="5" font-family="Arial" font-weight="bold" fill="white">출발</text>
+          </svg>
+        `;
+        var endSvg = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24">
+            <circle cx="12" cy="10" r="8" fill="#e53935" stroke="black" stroke-width="1"/>
+            <path d="M12 22 C10 18, 14 18, 12 22 Z" fill="#e53935" stroke="black" stroke-width="1"/>
+            <text x="12" y="10" text-anchor="middle" dominant-baseline="middle"
+                  font-size="5" font-family="Arial" font-weight="bold" fill="white">도착</text>
+          </svg>
+        `;
+        var currentSvg = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5" fill="#1976d2" stroke="white" stroke-width="2"/>
+          </svg>
+        `;
+
+        var startImage = svgToDataUrl(startSvg);
+        var endImage = svgToDataUrl(endSvg);
+        var currentImage = svgToDataUrl(currentSvg);
+
+        log("🖼 Marker images created");
+
+        /* ✅ 지도 기본 생성 */
+        var map = new kakao.maps.Map(document.getElementById('map'), {
+            center: new kakao.maps.LatLng(37.5665, 126.978),
+            level: 4
+        });
+        window.map = map; // RN에서 접근 가능하도록 노출
+        log("🗺 Map initialized");
+
+        /* ✅ 좌표 리스트 */
+        var positions = [];
+
+        // 출발지 마커
+        if (startLat && startLng) {
+            var startPos = new kakao.maps.LatLng(startLat, startLng);
+            positions.push(startPos);
+            new kakao.maps.Marker({
+                position: startPos,
+                image: new kakao.maps.MarkerImage(startImage, new kakao.maps.Size(60, 60), { offset: new kakao.maps.Point(30, 55) }),
+                map: map
+            });
+            log("✅ Start marker added", { lat: startLat, lng: startLng });
+        }
+
+        // 도착지 마커
+        if (endLat && endLng) {
+            var endPos = new kakao.maps.LatLng(endLat, endLng);
+            positions.push(endPos);
+            new kakao.maps.Marker({
+                position: endPos,
+                image: new kakao.maps.MarkerImage(endImage, new kakao.maps.Size(60, 60), { offset: new kakao.maps.Point(30, 55) }),
+                map: map
+            });
+            log("✅ End marker added", { lat: endLat, lng: endLng });
+        }
+
+        // 현재 위치 마커
+        if (currentLat && currentLng) {
+            var currentPos = new kakao.maps.LatLng(currentLat, currentLng);
+            positions.push(currentPos);
+            window.currentMarker = new kakao.maps.Marker({
+                position: currentPos,
+                image: new kakao.maps.MarkerImage(currentImage, new kakao.maps.Size(20, 20), { offset: new kakao.maps.Point(10, 10) }),
+                map: map
+            });
+            log("✅ Current marker added", { lat: currentLat, lng: currentLng });
+        }
+
+        /* ✅ 중심 좌표 계산 */
+        if (positions.length === 1) {
+            map.setCenter(positions[0]);
+            map.setLevel(4);
+            log("📍 Center set to single marker", { lat: positions[0].getLat(), lng: positions[0].getLng() });
+        } else if (positions.length > 1) {
+            // 동일 좌표 여부 확인
+            var allSame = positions.every(function(pos) {
+                return pos.getLat() === positions[0].getLat() &&
+                    pos.getLng() === positions[0].getLng();
+            });
+
+            if (allSame) {
+                map.setCenter(positions[0]);
+                map.setLevel(4);
+                log("📍 All markers same position → fallback to single marker mode");
+            } else {
+                var bounds = new kakao.maps.LatLngBounds();
+                positions.forEach(function(pos) {
+                    bounds.extend(pos);
+                });
+                map.setBounds(bounds);
+                log("📍 Bounds set to include all markers");
+            }
+        } else {
+            log("⚠️ No positions received!");
+        }
+
+        /* ✅ WebView 환경에서 타일 강제 갱신 */
+        setTimeout(function () {
+            log("🔄 Calling map.relayout() [1]");
+            map.relayout();
+        }, 300);
+
+        setTimeout(function () {
+            log("🔄 Calling map.relayout() [2]");
+            map.relayout();
+        }, 1000);
+
+        window.addEventListener("resize", function() {
+            log("🔄 Relayout on resize");
+            map.relayout();
+        });
+    });
+</script>
+</body>
+</html>
