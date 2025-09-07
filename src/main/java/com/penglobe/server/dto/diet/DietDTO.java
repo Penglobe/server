@@ -1,10 +1,6 @@
-package com.penglobe.server.dto;
+package com.penglobe.server.dto.diet;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.math.BigDecimal;
 
 @Data
@@ -12,8 +8,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class DietDTO {
+    // 응답 DTO
     private Long dietId;      // 기록 ID
     private Long userId;      // 사용자 ID
     private BigDecimal co2Kg; // 절감 배출량
 }
-
