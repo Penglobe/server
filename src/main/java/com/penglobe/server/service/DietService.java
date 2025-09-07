@@ -82,7 +82,7 @@ public class DietService {
         // 누적 업데이트 (없으면 생성)
         UserCounters counters = userCountersRepository.findById(userId)
                 .orElse(UserCounters.builder().user(user).userId(userId).build());
-        
+
         BigDecimal current = counters.getTotalDietCo2Kg();
         if (current == null) current = BigDecimal.ZERO;
 
