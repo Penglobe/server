@@ -17,5 +17,12 @@ public interface DietRecordRepository extends JpaRepository<DietRecord, Long> {
     // 특정 사용자(userId)의 하루 기록 전체
     @Query("SELECT d FROM DietRecord d WHERE d.user.userId = :userId AND d.createdAt >= :startOfDay AND d.createdAt < :endOfDay")
     List<DietRecord> findByUserUserIdAndCreatedAtBetween(@Param("userId") Long userId, @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
+
+    // 하루 기록 개수 (하루 3번 제한 체크용)
+    long countByUser_UserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+            Long userId,
+            LocalDateTime startOfDay,
+            LocalDateTime endOfDay
+    );
 }
 
