@@ -1,10 +1,11 @@
 package com.penglobe.server.domain.diet;
+
 import com.penglobe.server.domain.BaseEntity;
 import com.penglobe.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "diet_records")
@@ -24,17 +25,7 @@ public class DietRecord extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // 업로드한 이미지 URL
-    @Column(name = "image_url", nullable = false, length = 255)
-    private String imageUrl;
-
-    // 분석 JSON 요약
-    @Lob
-    @Column(name = "analysis_json")
-    private String analysisJson;
-
-    // 절감 배출량 (kg)
-    @Builder.Default
-    @Column(name = "co2_kg", nullable = false)
-    private Integer co2Kg = 0;
+    // 절감 배출량 (kg) — 소수점 첫째자리까지
+    @Column(name = "co2_kg", nullable = false, precision = 5, scale = 1)
+    private BigDecimal co2Kg;
 }
