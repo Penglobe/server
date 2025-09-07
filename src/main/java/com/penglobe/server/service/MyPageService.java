@@ -73,7 +73,7 @@ public class MyPageService {
 
         BigDecimal dietCo2Kg = dietRecordRepository.findByUserUserIdAndCreatedAtBetween(userId, startOfDay, endOfDay)
                 .stream()
-                .map(record -> BigDecimal.valueOf(Optional.ofNullable(record.getCo2Kg()).orElse(0)))
+                .map(record -> Optional.ofNullable(record.getCo2Kg()).orElse(BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalCo2Kg = transportCo2Kg.add(dietCo2Kg);
