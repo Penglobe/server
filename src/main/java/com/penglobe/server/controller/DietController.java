@@ -46,6 +46,13 @@ public class DietController {
         return ApiResponse.success(llmDietService.calculate(req));
     }
 
+    @Operation(summary = "식단 절감량 저장", description = "절약한 CO₂를 저장합니다. (하루 최대 3회)")
+    @PostMapping(value = "/ingest/save", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<DietDTO> create(@RequestBody DietDTO body) {
+        var dto = dietService.createDietRecordWithDailyLimit(body.getUserId(), body.getCo2Kg());
+        return ApiResponse.success(dto);
+    }
+
     @Operation(summary = "오늘 합계 조회", description = "해당 사용자의 오늘 하루 절감 CO₂ 총합을 반환합니다.")
     @GetMapping(value = "/{userId}/today/sum", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponse<BigDecimal> getTodaySum(@PathVariable Long userId) {
