@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class DietDTO {
-    // 응답 DTO
+    // 저장 DTO
     private Long dietId;      // 기록 ID
     private Long userId;      // 사용자 ID
     private BigDecimal co2Kg; // 절감 배출량

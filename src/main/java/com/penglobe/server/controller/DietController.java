@@ -3,7 +3,9 @@ package com.penglobe.server.controller;
 import com.penglobe.server.dto.ApiResponse;
 import com.penglobe.server.dto.diet.DietDTO;
 import com.penglobe.server.dto.diet.DietRequestDTO;
+import com.penglobe.server.dto.diet.DietResultDTO;
 import com.penglobe.server.service.DietService;
+import com.penglobe.server.service.LlmDietService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.time.LocalDateTime;
 public class DietController {
 
     private final DietService dietService;
+    private final LlmDietService llmDietService;
 
     @Operation(summary = "식단 기록 생성", description = "하루 최대 3회까지 등록 가능합니다.")
     @PostMapping(
@@ -35,6 +38,12 @@ public class DietController {
     public DietRequestDTO ingest(@RequestBody DietRequestDTO req) {
         log.info("📩 식단 요청 도착: userId={}, items={}", req.getUserId(), req.getItems());
         return req;
+    }
+
+    @Operation(summary = "식단 기록 & LLM 연결", description = "식단 탄소 배출량을 AI가 계산하여 반환합니다.")
+    @PostMapping(value = "/ingest/calc", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<DietResultDTO> calc(@RequestBody DietRequestDTO req) {
+        return ApiResponse.success(llmDietService.calculate(req));
     }
 
     @Operation(summary = "오늘 합계 조회", description = "해당 사용자의 오늘 하루 절감 CO₂ 총합을 반환합니다.")

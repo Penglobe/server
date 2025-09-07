@@ -16,7 +16,6 @@ public class DietRequestDTO {
     @NotNull
     @Positive
     private Long userId;
-
     private List<FoodItem> items;
 
     @Data
