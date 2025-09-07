@@ -33,9 +33,9 @@ public class GlobalExceptionHandler {
 
     // ✅ 서버 내부 오류 (예상치 못한 오류)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleException(Exception ex) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.fail(HttpStatus.INTERNAL_SERVER_ERROR.value(), "서버 오류가 발생했습니다."));
+    public ResponseEntity<ApiResponse<Object>> handleException(Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.status(500)
+                .body(ApiResponse.fail(500, e.getClass().getSimpleName() + ": " + (e.getMessage()==null?"":e.getMessage())));
     }
 }

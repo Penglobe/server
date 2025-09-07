@@ -1,3 +1,4 @@
+// src/main/java/com/penglobe/server/service/OrderService.java
 package com.penglobe.server.service;
 
 import com.penglobe.server.domain.shop.Orders;
@@ -30,7 +31,7 @@ public class OrderService {
         int qty = req.getQty();
         int need = product.getPrice() * qty;
 
-        // 포인트 원자 차감
+        // 포인트 원자 차감 (0이면 부족)
         int updated = userRepository.deductPoints(userId, need);
         if (updated == 0) throw new IllegalStateException("포인트가 부족합니다.");
 
@@ -41,19 +42,19 @@ public class OrderService {
                 .product(product)
                 .qty(qty)
                 .totalPoints(need)
-                .build(); // status는 @PrePersist에서 ORDERED 보정
+                .build(); // status는 @PrePersist 등에서 기본값 설정됨
 
         Orders saved = ordersRepository.save(order);
         return toDTO(saved);
     }
 
-    //주문내역
+    /** 내 주문 목록 (최신순) */
     public List<OrderDTO> myOrders(Long userId) {
         return ordersRepository.findByUser_UserIdOrderByCreatedAtDesc(userId)
                 .stream().map(this::toDTO).toList();
     }
 
-
+    /** 주문 상세 */
     public OrderDTO get(Long orderId) {
         Orders o = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문이 없습니다."));
@@ -67,7 +68,7 @@ public class OrderService {
                 .qty(o.getQty())
                 .totalPoints(o.getTotalPoints())
                 .productName(o.getProduct().getName())
-                .status(o.getStatus())
+                .status(o.getStatus() == null ? null : o.getStatus().name()) // ← Enum → String
                 .createdAt(o.getCreatedAt())
                 .build();
     }

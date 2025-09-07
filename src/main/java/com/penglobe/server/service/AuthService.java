@@ -77,7 +77,7 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(req.password))
                 .nickname(req.nickname)
                 .regionId(req.regionId)
-                .profileId(req.profileId)
+                .profile(req.profile)
                 .isProfileComplete(true)
                 .build();
         userRepository.save(u);
@@ -105,7 +105,7 @@ public class AuthService {
         User u = userRepository.findById(userId).orElseThrow();
         u.setRegionId(req.regionId);
         u.setNickname(req.nickname);
-        if (req.profileId != null) u.setProfileId(req.profileId);
+        if (req.profile != null) u.setProfile(req.profile);
         u.setIsProfileComplete(true);
         userRepository.save(u);
     }
