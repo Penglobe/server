@@ -16,8 +16,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,21 +62,26 @@ public class SurveyService {
         // 오늘 제출된 설문 조회
         List<SurveyResponse> todayResponses = responseRepository
                 .findByUserIdAndCreatedAtBetween(dto.getUserId(), startOfDay, endOfDay);
+        System.out.println("todayResponses: " + todayResponses);
 
         // ✅ 이미 제출한 경우 → 저장하지 않고 기존 결과 반환
         if (!todayResponses.isEmpty()) {
-            //System.out.println("S################################이미 제출됨");
-
             SurveyResponse latest = todayResponses.get(todayResponses.size() - 1);
             List<TopCo2DTO> top3 = new ArrayList<>();
             if (latest.getTop1() != null) top3.add(new TopCo2DTO(latest.getTop1()));
             if (latest.getTop2() != null) top3.add(new TopCo2DTO(latest.getTop2()));
             if (latest.getTop3() != null) top3.add(new TopCo2DTO(latest.getTop3()));
 
-            return new SurveyResultDTO(latest.getTotalCo2kg(), dto.getUserId(), top3, true);
+            return new SurveyResultDTO(
+                    latest.getTotalCo2kg(),
+                    dto.getUserId(),
+                    top3,
+                    true, // submitted = true
+                    latest.getCreatedAt()
+            );
         }
 
-        // --- 여기서부터는 '첫 제출'일 때만 실행 ---
+        // --- 첫 제출일 때만 실행 ---
         SurveyResponse response = new SurveyResponse();
         response.setUserId(dto.getUserId());
 
@@ -109,7 +117,7 @@ public class SurveyService {
         response.setTotalCo2kg(totalCo2);
         responseRepository.save(response);
 
-        // ✅ UserCounters도 첫 제출일 때만 업데이트
+        // ✅ UserCounters 업데이트
         UserCounters userCounters = userCountersRepository.findByUserId(dto.getUserId())
                 .orElseGet(() -> {
                     UserCounters c = new UserCounters();
@@ -132,7 +140,7 @@ public class SurveyService {
         response.setTop2(top3.size() > 1 ? top3.get(1).getCode() : null);
         response.setTop3(top3.size() > 2 ? top3.get(2).getCode() : null);
 
-        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false);
+        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false, response.getCreatedAt());
     }
 
 }
