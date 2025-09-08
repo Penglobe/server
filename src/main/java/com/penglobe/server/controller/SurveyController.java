@@ -38,6 +38,8 @@ public class SurveyController {
     public ResponseEntity<?> submitSurvey(@RequestBody SurveySubmitRequestDTO dto) {
        SurveyResultDTO result = surveyService.submitSurvey(dto);
 
+       System.out.println("result: " + result);
+
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 }
