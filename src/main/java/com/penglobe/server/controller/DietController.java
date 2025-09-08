@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,8 +49,11 @@ public class DietController {
 
     @Operation(summary = "식단 절감량 저장", description = "절약한 CO₂를 저장합니다. (하루 최대 3회)")
     @PostMapping(value = "/ingest/save", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<DietDTO> create(@RequestBody DietDTO body) {
-        var dto = dietService.createDietRecordWithDailyLimit(body.getUserId(), body.getCo2Kg());
+    public ApiResponse<DietDTO> create(@RequestBody DietDTO body, Authentication authentication) {
+        Long userId = (authentication == null) ? null : (Long) authentication.getPrincipal();
+        if (userId == null) throw new IllegalArgumentException("인증 필요");
+
+        var dto = dietService.createDietRecordWithDailyLimit(userId, body.getCo2Kg());
         return ApiResponse.success(dto);
     }
 

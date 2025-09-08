@@ -30,7 +30,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/shop/products", "/shop/products/**", "/rankings/regions", "/uploads/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-                        .anyRequest().permitAll()                // 나머지는 JWT 필수
+                        .anyRequest().authenticated()              // 나머지는 JWT 필수
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req,res,e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED)) // 401
