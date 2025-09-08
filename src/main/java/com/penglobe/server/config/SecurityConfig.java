@@ -5,6 +5,7 @@ import com.penglobe.server.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -19,7 +20,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        HttpSecurity httpSecurity = http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -28,12 +29,13 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/shop/products", "/shop/products/**").permitAll()
-                        .anyRequest().authenticated()                // 나머지는 JWT 필수
+                                "/shop/products", "/shop/products/**", "/rankings/regions", "/uploads/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .anyRequest().permitAll()                // 나머지는 JWT 필수
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req,res,e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED)) // 401
-                        .accessDeniedHandler((req,res,e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN))          // 403
+                        .authenticationEntryPoint((req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED)) // 401
+                        .accessDeniedHandler((req, res, e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN))          // 403
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class)
