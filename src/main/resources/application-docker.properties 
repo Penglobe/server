@@ -1,0 +1,5 @@
+spring.datasource.url=jdbc:mariadb://mariadb:3306/bootdb?characterEncoding=utf8mb4&serverTimezone=Asia/Seoul
+spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
+spring.datasource.username=bootuser
+spring.datasource.password=1234
+swagger.server.url=https://penglobe.shinhanacademy.co.kr
