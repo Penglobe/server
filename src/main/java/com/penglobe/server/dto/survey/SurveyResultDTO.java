@@ -18,5 +18,6 @@ public class SurveyResultDTO {
     private List<TopCo2DTO> top3; // co2 배출량이 높은 상위 3개 항목의 정보
     private boolean submitted; // 오늘 이미 제출했는지 여부
     private LocalDateTime surveyDate; // 제출 시각
+    private Double useraverageCo2kg;
 
 }
