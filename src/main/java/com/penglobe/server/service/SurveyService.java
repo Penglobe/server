@@ -1,14 +1,15 @@
 package com.penglobe.server.service;
 
-import com.penglobe.server.domain.survey.SurveyAnswer;
-import com.penglobe.server.domain.survey.SurveyItem;
-import com.penglobe.server.domain.survey.SurveyOption;
-import com.penglobe.server.domain.survey.SurveyResponse;
+import com.penglobe.server.domain.attendance.AttendanceType;
+import com.penglobe.server.domain.survey.*;
+import com.penglobe.server.domain.user.User;
 import com.penglobe.server.domain.user.UserCounters;
 import com.penglobe.server.dto.survey.*;
 import com.penglobe.server.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -17,12 +18,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.temporal.IsoFields;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -34,6 +37,9 @@ public class SurveyService {
     private final SurveyAnswerRepository answerRepository;
     private final SurveyItemRepository surveyItemRepository;
     private final UserCountersRepository userCountersRepository;
+    private final AttendanceLogService attendanceLogService;
+    private final UserRepository userRepository;
+    private final DailyStatisticsRepository dailyStatisticsRepository;
 
     //설문 보여주기
     public List<SurveyItemDTO> getTodaySurvey() {
@@ -59,7 +65,7 @@ public class SurveyService {
         LocalDateTime startOfDay = today.toLocalDate().atStartOfDay();
         LocalDateTime endOfDay = today.toLocalDate().atTime(LocalTime.MAX);
 
-        // 오늘 제출된 설문 조회
+        // 1️⃣ 오늘 제출 여부 확인
         List<SurveyResponse> todayResponses = responseRepository
                 .findByUserIdAndCreatedAtBetween(dto.getUserId(), startOfDay, endOfDay);
         System.out.println("todayResponses: " + todayResponses);
@@ -72,16 +78,19 @@ public class SurveyService {
             if (latest.getTop2() != null) top3.add(new TopCo2DTO(latest.getTop2()));
             if (latest.getTop3() != null) top3.add(new TopCo2DTO(latest.getTop3()));
 
+            double todayAverage = getTodayAverageCo2();
+
             return new SurveyResultDTO(
                     latest.getTotalCo2kg(),
                     dto.getUserId(),
                     top3,
                     true, // submitted = true
-                    latest.getCreatedAt()
+                    latest.getCreatedAt(),
+                    todayAverage
             );
         }
 
-        // --- 첫 제출일 때만 실행 ---
+        // 2️⃣ 첫 제출일 때 SurveyResponse 생성 + totalCo2 계산
         SurveyResponse response = new SurveyResponse();
         response.setUserId(dto.getUserId());
 
@@ -114,6 +123,7 @@ public class SurveyService {
             totalCo2 = Math.round(totalCo2 * 100.0) / 100.0;
         }
 
+        // 3️⃣ UserCounters 업데이트
         response.setTotalCo2kg(totalCo2);
         responseRepository.save(response);
 
@@ -128,9 +138,13 @@ public class SurveyService {
 
         BigDecimal newTotal = userCounters.getTotalSurveyCo2Kg().add(BigDecimal.valueOf(totalCo2));
         userCounters.setTotalSurveyCo2Kg(newTotal);
+        double useraverageCo2kg = updateDailyStatistics(totalCo2); // 오늘 전체 평균 계산
+
         userCountersRepository.save(userCounters);
 
-        // Top3 선정
+        double todayAverage = updateDailyStatistics(totalCo2);
+
+        // 4️⃣ Top3 선정
         List<TopCo2DTO> top3 = co2List.stream()
                 .sorted((o1, o2) -> Double.compare(o2.getRelativeScore(), o1.getRelativeScore()))
                 .limit(3)
@@ -139,8 +153,58 @@ public class SurveyService {
         response.setTop1(top3.size() > 0 ? top3.get(0).getCode() : null);
         response.setTop2(top3.size() > 1 ? top3.get(1).getCode() : null);
         response.setTop3(top3.size() > 2 ? top3.get(2).getCode() : null);
+        
+        // User 객체 가져오기
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. userId=" + dto.getUserId()));
 
-        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false, response.getCreatedAt());
+// 출석 로그 시도 (하루 1회만 인정)
+        boolean newSurvey = attendanceLogService.markAttendance(user, AttendanceType.SURVEY);
+        if (newSurvey) {
+            log.info("오늘 첫 출석 인정 ✅");
+
+        } else {
+            log.info("이미 오늘 제출함 → 무시");
+        }
+
+        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false, response.getCreatedAt(), todayAverage);
     }
+
+
+    // DailyStatistics 누적 및 평균 계산
+    public double updateDailyStatistics(double totalCo2) {
+        LocalDate today = LocalDate.now();
+        DailyStatistics avgDaily = dailyStatisticsRepository.findByUserIdIsNullAndDate(today)
+                .orElseGet(() -> {
+                    DailyStatistics d = new DailyStatistics();
+                    d.setUserId(null);
+                    d.setDate(today);
+                    d.setStatisticsTotalCo2kg(0);
+                    d.setUserCount(0);
+                    return d;
+                });
+
+        avgDaily.setStatisticsTotalCo2kg(avgDaily.getStatisticsTotalCo2kg() + totalCo2);
+        avgDaily.setUserCount(avgDaily.getUserCount() + 1);
+        dailyStatisticsRepository.save(avgDaily);
+
+        double averageCo2 = avgDaily.getUserCount() > 0 ?
+                Math.round(avgDaily.getStatisticsTotalCo2kg() / avgDaily.getUserCount() * 100.0) / 100.0
+                : 0;
+
+        return averageCo2;
+    }
+
+    // DailyStatistics에서 오늘 평균 조회
+    private double getTodayAverageCo2() {
+        LocalDate today = LocalDate.now();
+        DailyStatistics avgDaily = dailyStatisticsRepository.findByUserIdIsNullAndDate(today)
+                .orElse(null);
+
+        if (avgDaily == null || avgDaily.getUserCount() == 0) return 0;
+
+        return Math.round(avgDaily.getStatisticsTotalCo2kg() / avgDaily.getUserCount() * 100.0) / 100.0;
+    }
+
 
 }
