@@ -14,15 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.temporal.IsoFields;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -64,6 +58,8 @@ public class SurveyService {
         LocalDateTime today = LocalDateTime.now();
         LocalDateTime startOfDay = today.toLocalDate().atStartOfDay();
         LocalDateTime endOfDay = today.toLocalDate().atTime(LocalTime.MAX);
+
+
 
         // 1️⃣ 오늘 제출 여부 확인
         List<SurveyResponse> todayResponses = responseRepository
@@ -174,11 +170,15 @@ public class SurveyService {
     // DailyStatistics 누적 및 평균 계산
     public double updateDailyStatistics(double totalCo2) {
         LocalDate today = LocalDate.now();
+        int dayOfWeek = today.getDayOfWeek().getValue();
+    System.out.println("dayOfWeek = " + dayOfWeek);
+
         DailyStatistics avgDaily = dailyStatisticsRepository.findByUserIdIsNullAndDate(today)
                 .orElseGet(() -> {
                     DailyStatistics d = new DailyStatistics();
                     d.setUserId(null);
                     d.setDate(today);
+                    d.setDayOfWeek(dayOfWeek);
                     d.setStatisticsTotalCo2kg(0);
                     d.setUserCount(0);
                     return d;
@@ -204,6 +204,42 @@ public class SurveyService {
         if (avgDaily == null || avgDaily.getUserCount() == 0) return 0;
 
         return Math.round(avgDaily.getStatisticsTotalCo2kg() / avgDaily.getUserCount() * 100.0) / 100.0;
+    }
+
+    //사용자 totalco2
+    public double[] getUserWeeklyCo2(Long userId) {
+        LocalDate today = LocalDate.now();
+        LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
+        LocalDate endOfWeek = today.with(DayOfWeek.SUNDAY);
+
+        double[] weekCo2 = new double[7]; // 0=월, 6=일
+        Arrays.fill(weekCo2, 0);
+
+        List<StatisticsDTO> stats = dailyStatisticsRepository.findWeeklyAvgByUserId(userId, startOfWeek, endOfWeek);
+        for (StatisticsDTO d : stats) {
+            int index = (d.getDayOfWeek() + 5) % 7;
+            weekCo2[index] = d.getTotalCo2kg();
+        }
+        return weekCo2;
+    }
+
+    //사용자 전체 평균
+    public double[] getTotalWeeklyCo2() {
+        LocalDate today = LocalDate.now();
+        LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
+        LocalDate endOfWeek = today.with(DayOfWeek.SUNDAY);
+
+        double[] weekCo2 = new double[7];
+        Arrays.fill(weekCo2, 0);
+
+        List<StatisticsDTO> stats = dailyStatisticsRepository.findWeeklyAvgAllUsers(startOfWeek, endOfWeek);
+        for (StatisticsDTO d : stats) {
+            int index = (d.getDayOfWeek());
+            double roundedCo2 = Math.round(d.getTotalCo2kg() * 100.0) / 100.0;
+            weekCo2[index] = roundedCo2;
+
+        }
+        return weekCo2;
     }
 
 

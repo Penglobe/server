@@ -50,6 +50,8 @@ public class QuizQuestionService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        System.out.println("userId" + user.getUserId());
+
         // 포인트 지급
         int points = (correctAnswer != null && correctAnswer.equals(userAnswer)) ? 10 : 1;
         user.setTotalPoint(user.getTotalPoint() + points);
