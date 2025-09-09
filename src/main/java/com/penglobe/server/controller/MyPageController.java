@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/users/me")
@@ -44,6 +45,13 @@ public class MyPageController {
         Long userId = requireUserId(authentication);
         myPageService.addDummyData(userId);
         return ResponseEntity.ok(ApiResponse.success(200, "더미 데이터 추가 성공", null));
+    }
+
+    @GetMapping("/attendance-dates")
+    public ResponseEntity<ApiResponse<List<String>>> getAttendanceDates(Authentication authentication) {
+        Long userId = requireUserId(authentication);
+        List<String> dates = myPageService.getAttendanceDates(userId);
+        return ResponseEntity.ok(ApiResponse.success(dates));
     }
 
     // ── 공통: Authentication에서 userId(Long) 안전하게 뽑기 ──
