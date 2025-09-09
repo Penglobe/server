@@ -16,22 +16,34 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
-    public SecurityConfig(JwtTokenProvider jwtTokenProvider) { this.jwtTokenProvider = jwtTokenProvider; }
+
+    public SecurityConfig(JwtTokenProvider jwtTokenProvider) {
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        HttpSecurity httpSecurity = http
+        http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Swagger / API Docs
                         .requestMatchers("/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
+                        // Auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/shop/products", "/shop/products/**", "/rankings/regions", "/uploads/**").permitAll()
+                        // Kakao map & proxy
+                        .requestMatchers(HttpMethod.GET, "/map").permitAll()
+                        .requestMatchers("/api/kakao/**").permitAll()
+                        // Shop, Ranking, Uploads
+                        .requestMatchers(HttpMethod.GET,
+                                "/shop/products", "/shop/products/**",
+                                "/rankings/regions", "/uploads/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-                        .anyRequest().authenticated()              // 나머지는 JWT 필수
+                        // OPTIONS (CORS preflight)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // 나머지는 인증 필수
+                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED)) // 401
@@ -41,6 +53,7 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(h -> h.disable())
                 .formLogin(f -> f.disable());
+
         return http.build();
     }
 }
