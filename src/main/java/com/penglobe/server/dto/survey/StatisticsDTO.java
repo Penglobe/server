@@ -1,26 +1,28 @@
 package com.penglobe.server.dto.survey;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-//@AllArgsConstructor
+@AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class StatisticsDTO {
     private Integer dayOfWeek;
     private Double totalCo2kg;
-
-    public StatisticsDTO(Integer dayOfWeek, Double totalCo2kg) {
-        this.dayOfWeek = dayOfWeek;
-        this.totalCo2kg = totalCo2kg;
-    }
-
-    public Integer getDayOfWeek() {
-        return dayOfWeek;
-    }
-
-    public Double getTotalCo2kg() {
-        return totalCo2kg;
-    }
+//
+//    public StatisticsDTO(Integer dayOfWeek, Double totalCo2kg) {
+//        this.dayOfWeek = dayOfWeek;
+//        this.totalCo2kg = totalCo2kg;
+//    }
+//
+//    public Integer getDayOfWeek() {
+//        return dayOfWeek;
+//    }
+//
+//    public Double getTotalCo2kg() {
+//        return totalCo2kg;
+//    }
 }

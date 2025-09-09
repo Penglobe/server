@@ -1,8 +1,6 @@
 package com.penglobe.server.dto.survey;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,6 +8,8 @@ import java.util.Date;
 import java.util.List;
 
 @Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class SurveyResultDTO {
@@ -19,5 +19,6 @@ public class SurveyResultDTO {
     private boolean submitted; // 오늘 이미 제출했는지 여부
     private LocalDateTime surveyDate; // 제출 시각
     private Double useraverageCo2kg;
+    private String feedback;
 
 }

@@ -42,6 +42,8 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
                         // OPTIONS (CORS preflight)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // 퀴즈
+                        .requestMatchers("/quiz/**").permitAll()
                         // 나머지는 인증 필수
                         .anyRequest().authenticated()
                 )
