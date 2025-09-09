@@ -25,7 +25,7 @@ public class DietRecord extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // 절감 배출량 (kg) — 소수점 첫째자리까지
+    // 절감 배출량 (kg) — 소수점 둘째자리까지
     @Column(name = "co2kg", nullable = false, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal co2Kg = BigDecimal.ZERO;
