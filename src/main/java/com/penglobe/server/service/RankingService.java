@@ -268,17 +268,26 @@ public class RankingService {
     @Transactional(readOnly = true)
     public WeeklyRankingResponseDTO getWeeklyRanking(Long currentUserId) {
         // 1. Top 10 조회
-        List<RankingInfoDTO> top10 = weeklyRankingRepository.findTop10ByOrderByRankingAsc().stream()
-                .map(wr -> new RankingInfoDTO(wr.getRanking(), wr.getNickname(), wr.getScore()))
+        List<WeeklyRanking> rawTop10 = weeklyRankingRepository.findTop10ByOrderByRankingAsc();
+        List<Long> top10UserIds = rawTop10.stream().map(WeeklyRanking::getUserId).toList();
+        Map<Long, User> top10UserMap = userRepository.findAllById(top10UserIds).stream()
+                .collect(Collectors.toMap(User::getUserId, user -> user));
+
+        List<RankingInfoDTO> top10 = rawTop10.stream()
+                .map(wr -> {
+                    User user = top10UserMap.get(wr.getUserId());
+                    String profile = (user != null) ? user.getProfile() : null; // Get profile
+                    return new RankingInfoDTO(wr.getRanking(), wr.getNickname(), wr.getScore(), profile);
+                })
                 .toList();
 
         // 2. 내 순위 조회
         MyRankingDTO myRank = weeklyRankingRepository.findByUserId(currentUserId)
                 .map(wr -> {
-                    // Fetch user to get lastWeekRank
                     User user = userRepository.findByUserId(currentUserId).orElse(null);
                     Integer lastWeekRank = (user != null) ? user.getLastWeekRank() : null;
-                    return new MyRankingDTO(wr.getRanking(), wr.getScore(), lastWeekRank); // Pass lastWeekRank
+                    String profile = (user != null) ? user.getProfile() : null; // Get profile
+                    return new MyRankingDTO(wr.getRanking(), wr.getScore(), lastWeekRank, profile); // Pass profile
                 })
                 .orElse(null); // 랭킹에 없으면 null
 
@@ -293,13 +302,26 @@ public class RankingService {
     @Transactional(readOnly = true)
     public WeeklyRankingResponseDTO getAllRanking(Long currentUserId) {
         // 1. Top 10 조회
-        List<RankingInfoDTO> top10 = allRankingRepository.findTop10ByOrderByRankingAsc().stream()
-                .map(ar -> new RankingInfoDTO(ar.getRanking(), ar.getNickname(), ar.getScore()))
+        List<AllRanking> rawTop10 = allRankingRepository.findTop10ByOrderByRankingAsc();
+        List<Long> top10UserIds = rawTop10.stream().map(AllRanking::getUserId).toList();
+        Map<Long, User> top10UserMap = userRepository.findAllById(top10UserIds).stream()
+                .collect(Collectors.toMap(User::getUserId, user -> user));
+
+        List<RankingInfoDTO> top10 = rawTop10.stream()
+                .map(ar -> {
+                    User user = top10UserMap.get(ar.getUserId());
+                    String profile = (user != null) ? user.getProfile() : null; // Get profile
+                    return new RankingInfoDTO(ar.getRanking(), ar.getNickname(), ar.getScore(), profile);
+                })
                 .toList();
 
         // 2. 내 순위 조회
         MyRankingDTO myRank = allRankingRepository.findByUserId(currentUserId)
-                .map(ar -> new MyRankingDTO(ar.getRanking(), ar.getScore(), null))
+                .map(ar -> {
+                    User user = userRepository.findByUserId(currentUserId).orElse(null);
+                    String profile = (user != null) ? user.getProfile() : null; // Get profile
+                    return new MyRankingDTO(ar.getRanking(), ar.getScore(), null, profile); // Pass profile
+                })
                 .orElse(null); // 랭킹에 없으면 null
 
         return new WeeklyRankingResponseDTO(top10, myRank);

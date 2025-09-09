@@ -48,5 +48,9 @@ public interface TransportActivityRepository extends JpaRepository<TransportActi
     @Query("SELECT t FROM TransportActivity t WHERE t.user.userId = :userId AND t.createdAt >= :startOfDay AND t.createdAt < :endOfDay")
     List<TransportActivity> findByUserUserIdAndCreatedAtBetween(@Param("userId") Long userId, @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
 
+    @Query("SELECT t.startTime FROM TransportActivity t WHERE t.user.userId = :userId")
+    List<LocalDateTime> findStartTimeByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT t FROM TransportActivity t WHERE t.user.userId = :userId AND t.startTime >= :startOfDay AND t.startTime < :endOfDay")
+    List<TransportActivity> findByUserUserIdAndStartTimeBetween(@Param("userId") Long userId, @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
 }

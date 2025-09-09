@@ -3,6 +3,7 @@ package com.penglobe.server.repository;
 import com.penglobe.server.domain.ranking.WeeklyRankingParticipant;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface WeeklyRankingParticipantRepository extends JpaRepository<WeeklyRankingParticipant, Long> {
@@ -10,4 +11,6 @@ public interface WeeklyRankingParticipantRepository extends JpaRepository<Weekly
     List<WeeklyRankingParticipant> findAll();
 
     void deleteAllInBatch();
+
+    boolean existsByUserIdAndWeekStartDate(Long userId, LocalDate weekStartDate);
 }
