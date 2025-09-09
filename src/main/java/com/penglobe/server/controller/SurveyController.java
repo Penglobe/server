@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -38,5 +39,17 @@ public class SurveyController {
     public ResponseEntity<?> submitSurvey(@RequestBody SurveySubmitRequestDTO dto) {
        SurveyResultDTO result = surveyService.submitSurvey(dto);
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    //사용자 co2 가져오기
+    @GetMapping("/weekly/user/{userId}")
+    public double[] getUserWeeklyCo2(@PathVariable Long userId) {
+        return surveyService.getUserWeeklyCo2(userId);
+    }
+
+    @GetMapping("/weekly/total")
+    public double[] getTotalWeeklyCo2() {
+        System.out.println("전체 사용자 co2 평균: " + surveyService.getTotalWeeklyCo2());
+        return surveyService.getTotalWeeklyCo2();
     }
 }

@@ -36,7 +36,7 @@ public class User extends BaseEntity {
     @Column(name = "total_point", nullable = false)
     private Integer totalPoint = 0; // 보유 포인트 캐시
 
-    @Column(name = "profile", length = 64, nullable = false)
+    @Column(name = "profile", nullable = false)
     private String profile; // 기본값 제거 → PrePersist에서 보장
 
     @Column(name = "kakao_id")
