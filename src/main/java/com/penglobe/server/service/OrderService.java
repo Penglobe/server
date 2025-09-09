@@ -1,11 +1,14 @@
 // src/main/java/com/penglobe/server/service/OrderService.java
 package com.penglobe.server.service;
 
+import com.penglobe.server.domain.ledger.LedgerReason;
+import com.penglobe.server.domain.ledger.PointsLedger;
 import com.penglobe.server.domain.shop.Orders;
 import com.penglobe.server.domain.shop.Products;
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.dto.OrderDTO;
 import com.penglobe.server.repository.OrdersRepository;
+import com.penglobe.server.repository.PointsLedgerRepository;
 import com.penglobe.server.repository.ProductsRepository;
 import com.penglobe.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ public class OrderService {
     private final OrdersRepository ordersRepository;
     private final ProductsRepository productsRepository;
     private final UserRepository userRepository;
+    private final PointsLedgerRepository pointsLedgerRepository;
 
     /** 구매 즉시 주문 생성 (포인트 차감 포함) */
     @Transactional
@@ -43,6 +47,14 @@ public class OrderService {
                 .qty(qty)
                 .totalPoints(need)
                 .build(); // status는 @PrePersist 등에서 기본값 설정됨
+
+        pointsLedgerRepository.save(
+                PointsLedger.builder()
+                        .user(userRef)
+                        .changeAmount(-need)
+                        .reason(LedgerReason.SHOP_PURCHASE)
+                        .build()
+        );
 
         Orders saved = ordersRepository.save(order);
         return toDTO(saved);

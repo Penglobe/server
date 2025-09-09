@@ -28,4 +28,10 @@ public interface PointsLedgerRepository extends JpaRepository<PointsLedger, Long
             "AND p.reason = 'QUIZ'")
     long countTodayQuizSubmit(@Param("userId") Long userId);
 
+    // 오늘 출석 보상 여부
+    @Query("SELECT COUNT(p) FROM PointsLedger p " +
+            "WHERE p.user.userId = :userId " +
+            "AND DATE(p.createdAt) = CURRENT_DATE " +
+            "AND p.reason = 'ATTENDANCE'")
+    long countTodayAttendance(@Param("userId") Long userId);
 }

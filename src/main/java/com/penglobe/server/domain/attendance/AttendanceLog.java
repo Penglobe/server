@@ -1,5 +1,6 @@
 package com.penglobe.server.domain.attendance;
 
+import com.penglobe.server.domain.BaseEntity;
 import com.penglobe.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,7 +17,7 @@ import java.time.LocalDate;
         name = "attendance_logs",
         uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "date"})
 )
-public class AttendanceLog {
+public class AttendanceLog extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
