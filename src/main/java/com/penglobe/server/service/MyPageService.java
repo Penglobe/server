@@ -38,12 +38,16 @@ public class MyPageService {
     private final RankingService rankingService;
     private final WeeklyRankingParticipantRepository weeklyRankingParticipantRepository;
     private final AttendanceLogRepository attendanceLogRepository; // Injected
+    private final TransportActivityService transportActivityService;
+    private final AttendanceLogService attendanceLogService;
 
     public MyPageDTO getMyPageInfo(Long userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
         UserCounters userCounters = userCountersRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("UserCounters not found for user ID: " + userId));
+
+        System.out.println("DEBUG: MyPageService - getMyPageInfo - Fetched UserCounters: totalDays=" + userCounters.getAttendanceTotalDays() + ", longestStreak=" + userCounters.getLongestAttendanceStreak());
 
         String regionName = null;
         if (user.getRegionId() != null) {
@@ -135,7 +139,10 @@ public class MyPageService {
                     .distanceM(1000)
                     .co2Kg(BigDecimal.valueOf(1.5))
                     .build();
-            transportActivityRepository.save(dummyActivity);
+            TransportActivity savedActivity = transportActivityRepository.save(dummyActivity);
+
+            // Call stopActivity to calculate points and update user's totalPoint
+            transportActivityService.stopActivity(savedActivity.getTransportId(), savedActivity.getDistanceM(), null);
 
             // 2. Mark attendance (logic copied and adapted from AttendanceLogService)
             // Check if attendance for this day already exists
@@ -148,8 +155,9 @@ public class MyPageService {
                         .shownAt(date)
                         .build();
                 attendanceLogRepository.save(log);
+            }
 
-                // Update counters
+                // ONLY update counters IF a new attendance log was created
                 counters.setAttendanceTotalDays(counters.getAttendanceTotalDays() + 1);
 
                 if (date.equals(counters.getLastAttendanceDate() != null ? counters.getLastAttendanceDate().plusDays(1) : null)) {
@@ -165,7 +173,7 @@ public class MyPageService {
                 }
                 counters.setLastAttendanceDate(date);
             }
-        }
+        userCountersRepository.flush();
         userCountersRepository.save(counters); // Save all counter updates at the end
 
         // Set a dummy last week rank for testing persistent participation
@@ -186,5 +194,20 @@ public class MyPageService {
         rankingService.updateLiveWeeklyRanking();
         rankingService.updateAllRanking();
         rankingService.updateRegionRankings();
+    }
+
+    @Transactional
+    public void resetUserAttendanceCounters(Long userId) {
+        UserCounters counters = userCountersRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("UserCounters not found for user ID: " + userId));
+
+        counters.setAttendanceTotalDays(0);
+        counters.setLongestAttendanceStreak(0);
+        counters.setAttendanceStreakDays(0);
+        counters.setLastAttendanceDate(null);
+        userCountersRepository.save(counters);
+        attendanceLogRepository.deleteByUser(userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId)));
+        transportActivityRepository.deleteByUser(userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId)));
+        dietRecordRepository.deleteByUser(userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId)));
     }
 }

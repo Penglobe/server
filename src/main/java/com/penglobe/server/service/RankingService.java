@@ -277,7 +277,7 @@ public class RankingService {
                 .map(wr -> {
                     User user = top10UserMap.get(wr.getUserId());
                     String profile = (user != null) ? user.getProfile() : null; // Get profile
-                    return new RankingInfoDTO(wr.getRanking(), wr.getNickname(), wr.getScore(), profile);
+                    return new RankingInfoDTO(wr.getUserId(), wr.getRanking(), wr.getNickname(), wr.getScore(), profile); // Pass userId
                 })
                 .toList();
 
@@ -287,7 +287,7 @@ public class RankingService {
                     User user = userRepository.findByUserId(currentUserId).orElse(null);
                     Integer lastWeekRank = (user != null) ? user.getLastWeekRank() : null;
                     String profile = (user != null) ? user.getProfile() : null; // Get profile
-                    return new MyRankingDTO(wr.getRanking(), wr.getScore(), lastWeekRank, profile); // Pass profile
+                    return new MyRankingDTO(wr.getUserId(), wr.getRanking(), wr.getScore(), lastWeekRank, profile); // Pass userId
                 })
                 .orElse(null); // 랭킹에 없으면 null
 
@@ -311,7 +311,7 @@ public class RankingService {
                 .map(ar -> {
                     User user = top10UserMap.get(ar.getUserId());
                     String profile = (user != null) ? user.getProfile() : null; // Get profile
-                    return new RankingInfoDTO(ar.getRanking(), ar.getNickname(), ar.getScore(), profile);
+                    return new RankingInfoDTO(ar.getUserId(), ar.getRanking(), ar.getNickname(), ar.getScore(), profile); // Pass userId
                 })
                 .toList();
 
@@ -320,7 +320,7 @@ public class RankingService {
                 .map(ar -> {
                     User user = userRepository.findByUserId(currentUserId).orElse(null);
                     String profile = (user != null) ? user.getProfile() : null; // Get profile
-                    return new MyRankingDTO(ar.getRanking(), ar.getScore(), null, profile); // Pass profile
+                    return new MyRankingDTO(ar.getUserId(), ar.getRanking(), ar.getScore(), null, profile); // Pass userId
                 })
                 .orElse(null); // 랭킹에 없으면 null
 

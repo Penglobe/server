@@ -1,6 +1,7 @@
 package com.penglobe.server.repository;
 
 import com.penglobe.server.domain.diet.DietRecord;
+import com.penglobe.server.domain.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -47,5 +48,7 @@ public interface DietRecordRepository extends JpaRepository<DietRecord, Long> {
 
     @Query("SELECT d.createdAt FROM DietRecord d WHERE d.user.userId = :userId")
     List<LocalDateTime> findCreatedAtByUserId(@Param("userId") Long userId);
+
+    void deleteByUser(User user);
 }
 
