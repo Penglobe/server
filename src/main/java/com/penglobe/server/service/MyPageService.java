@@ -52,6 +52,10 @@ public class MyPageService {
                     .orElse(null);
         }
 
+        BigDecimal totalScore = userCountersRepository
+                .sumTotalCo2ByUserId(userId)
+                .orElse(BigDecimal.ZERO);
+
         System.out.println("DEBUG: MyPageService - User Profile: " + user.getProfile());
         System.out.println("DEBUG: MyPageService - User Region ID: " + user.getRegionId());
         System.out.println("DEBUG: MyPageService - Resolved Region Name: " + regionName);
@@ -64,6 +68,7 @@ public class MyPageService {
                 .attendanceStreakDays(userCounters.getAttendanceStreakDays())
                 .regionId(user.getRegionId())
                 .regionName(regionName)
+                .totalScore(totalScore)
                 .profile(user.getProfile()) // Added profile field
                 .build();
     }
