@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Long> {
 
-    Optional<AttendanceLog> findByUserAndDate(User user, LocalDate date);
+    Optional<AttendanceLog> findByUser_UserIdAndDate(Long userId, LocalDate date);
 
     boolean existsByUserAndDate(User user, LocalDate date);
 }
