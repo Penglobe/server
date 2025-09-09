@@ -49,7 +49,6 @@ public class SurveyController {
 
     @GetMapping("/weekly/total")
     public double[] getTotalWeeklyCo2() {
-        System.out.println("전체 사용자 co2 평균: " + surveyService.getTotalWeeklyCo2());
         return surveyService.getTotalWeeklyCo2();
     }
 }

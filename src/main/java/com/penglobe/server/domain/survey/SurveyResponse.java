@@ -33,8 +33,8 @@ public class SurveyResponse extends BaseEntity {
     @OneToMany(mappedBy = "surveyResponse", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SurveyAnswer> answers = new ArrayList<>();
 
-//    @Column(columnDefinition = "TEXT")
-//    private String feedback; // LLM 피드백 저장용
+    @Column
+    private String feedback; // LLM 피드백 저장용
 
     @Column
     private String top1;

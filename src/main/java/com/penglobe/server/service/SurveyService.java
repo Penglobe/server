@@ -34,6 +34,7 @@ public class SurveyService {
     private final AttendanceLogService attendanceLogService;
     private final UserRepository userRepository;
     private final DailyStatisticsRepository dailyStatisticsRepository;
+    private final SurveyLLMService surveyLLMService;
 
     //설문 보여주기
     public List<SurveyItemDTO> getTodaySurvey() {
@@ -60,11 +61,9 @@ public class SurveyService {
         LocalDateTime endOfDay = today.toLocalDate().atTime(LocalTime.MAX);
 
 
-
         // 1️⃣ 오늘 제출 여부 확인
         List<SurveyResponse> todayResponses = responseRepository
                 .findByUserIdAndCreatedAtBetween(dto.getUserId(), startOfDay, endOfDay);
-        System.out.println("todayResponses: " + todayResponses);
 
         // ✅ 이미 제출한 경우 → 저장하지 않고 기존 결과 반환
         if (!todayResponses.isEmpty()) {
@@ -76,13 +75,15 @@ public class SurveyService {
 
             double todayAverage = getTodayAverageCo2();
 
+            System.out.println("@@@@@@@" + latest.getFeedback());
+
             return new SurveyResultDTO(
                     latest.getTotalCo2kg(),
                     dto.getUserId(),
                     top3,
                     true, // submitted = true
                     latest.getCreatedAt(),
-                    todayAverage
+                    todayAverage, latest.getFeedback()
             );
         }
 
@@ -154,6 +155,23 @@ public class SurveyService {
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. userId=" + dto.getUserId()));
 
+
+        SurveyResultDTO surveyResult = new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false, response.getCreatedAt(), todayAverage, null);
+
+        // LLM 피드백 생성 및 저장
+        String feedback;
+        try {
+            surveyResult = surveyLLMService.generateFeedback(surveyResult, top3);
+            feedback = surveyResult.getFeedback();
+            response.setFeedback(feedback);
+            responseRepository.save(response); // DB 반영
+
+
+        } catch (Exception e) {
+            feedback = "피드백 생성 실패";
+            surveyResult.setFeedback(feedback);
+        }
+
 // 출석 로그 시도 (하루 1회만 인정)
         boolean newSurvey = attendanceLogService.markAttendance(user, AttendanceType.SURVEY);
         if (newSurvey) {
@@ -163,7 +181,8 @@ public class SurveyService {
             log.info("이미 오늘 제출함 → 무시");
         }
 
-        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false, response.getCreatedAt(), todayAverage);
+        System.out.println("####################3 " + surveyResult);
+        return new SurveyResultDTO(totalCo2, dto.getUserId(), top3, false, response.getCreatedAt(), todayAverage, feedback);
     }
 
 
@@ -171,7 +190,6 @@ public class SurveyService {
     public double updateDailyStatistics(double totalCo2) {
         LocalDate today = LocalDate.now();
         int dayOfWeek = today.getDayOfWeek().getValue();
-    System.out.println("dayOfWeek = " + dayOfWeek);
 
         DailyStatistics avgDaily = dailyStatisticsRepository.findByUserIdIsNullAndDate(today)
                 .orElseGet(() -> {
