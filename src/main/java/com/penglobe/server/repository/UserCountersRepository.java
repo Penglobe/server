@@ -65,5 +65,7 @@ public interface UserCountersRepository extends JpaRepository<UserCounters, Long
                               @Param("streakDays") int streakDays,
                               @Param("monthDays") int monthDays);
 
-
+    @Query("SELECT (COALESCE(uc.totalDistanceCo2Kg,0) + COALESCE(uc.totalDietCo2Kg,0) + COALESCE(uc.totalSurveyCo2Kg,0)) " +
+            "FROM UserCounters uc WHERE uc.userId = :userId")
+    Optional<BigDecimal> sumTotalCo2ByUserId(@Param("userId") Long userId);
 }

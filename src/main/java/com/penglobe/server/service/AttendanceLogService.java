@@ -115,12 +115,17 @@ public class AttendanceLogService {
         // 가중치 랜덤 (10/20/30/40/50, 유저+날짜 시드 → 같은 날 동일)
         int reward = rollWeightedReward(userId, today);
 
+        User user = userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("User Not Fount"));
+
         PointsLedger ledger = PointsLedger.builder()
                 .user(userRepository.getReferenceById(userId))
                 .changeAmount(reward)
                 .reason(LedgerReason.ATTENDANCE)
                 .build();
         pointsLedgerRepository.save(ledger);
+
+        user.setTotalPoint(user.getTotalPoint() + reward);
+        userRepository.save(user);
 
         log.setShownAt(today);
         return reward;
