@@ -47,6 +47,15 @@ public class AuthController {
                 .body(ApiResponse.success(201, "회원가입 완료", null));
     }
 
+    @Operation(summary = "이메일 중복 확인", description = "이미 존재하는 이메일이면 exists=true")
+    @GetMapping("/check-email")
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> checkEmail(@RequestParam String email) {
+        boolean exists = userRepository.existsByEmail(email); // 이미 AuthService에서 사용 중
+        return ResponseEntity.ok(
+                ApiResponse.success(200, "확인", Map.of("exists", exists))
+        );
+    }
+
     @Operation(summary = "자체 로그인", description = "이메일/비밀번호로 로그인 후 JWT 발급")
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LocalLoginRequest req) {
