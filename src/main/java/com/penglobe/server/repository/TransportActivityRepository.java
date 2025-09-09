@@ -1,5 +1,6 @@
 package com.penglobe.server.repository;
 import com.penglobe.server.domain.transport.TransportActivity;
+import com.penglobe.server.domain.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -53,4 +54,6 @@ public interface TransportActivityRepository extends JpaRepository<TransportActi
 
     @Query("SELECT t FROM TransportActivity t WHERE t.user.userId = :userId AND t.startTime >= :startOfDay AND t.startTime < :endOfDay")
     List<TransportActivity> findByUserUserIdAndStartTimeBetween(@Param("userId") Long userId, @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
+
+    void deleteByUser(User user);
 }

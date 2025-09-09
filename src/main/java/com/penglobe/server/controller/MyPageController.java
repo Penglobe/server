@@ -54,6 +54,13 @@ public class MyPageController {
         return ResponseEntity.ok(ApiResponse.success(dates));
     }
 
+    @PostMapping("/reset-attendance")
+    public ResponseEntity<ApiResponse<Void>> resetAttendance(Authentication authentication) {
+        Long userId = requireUserId(authentication);
+        myPageService.resetUserAttendanceCounters(userId);
+        return ResponseEntity.ok(ApiResponse.success(200, "출석 카운터 및 관련 활동 재설정 성공", null));
+    }
+
     // ── 공통: Authentication에서 userId(Long) 안전하게 뽑기 ──
     private Long requireUserId(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
