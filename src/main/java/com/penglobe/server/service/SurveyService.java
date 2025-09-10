@@ -184,7 +184,7 @@ public class SurveyService {
     // DailyStatistics 누적 및 평균 계산
     public double updateDailyStatistics(double totalCo2) {
         LocalDate today = LocalDate.now();
-        int dayOfWeek = today.getDayOfWeek().getValue();
+        int dayOfWeek = today.getDayOfWeek().getValue() -1;
 
         //오늘 날짜 없으면 새로 생성
         DailyStatistics avgDaily = dailyStatisticsRepository.findByUserIdIsNullAndDate(today)
