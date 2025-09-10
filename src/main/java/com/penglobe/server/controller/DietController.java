@@ -8,11 +8,11 @@ import com.penglobe.server.service.DietService;
 import com.penglobe.server.service.LlmDietService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,11 +31,7 @@ public class DietController {
     private final LlmDietService llmDietService;
 
     @Operation(summary = "식단 기록 생성", description = "하루 최대 3회까지 등록 가능합니다.")
-    @PostMapping(
-            value = "/ingest",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+    @PostMapping(value = "/ingest", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public DietRequestDTO ingest(@RequestBody DietRequestDTO req) {
         log.info("📩 식단 요청 도착: userId={}, items={}", req.getUserId(), req.getItems());
         return req;
@@ -47,14 +43,32 @@ public class DietController {
         return ApiResponse.success(llmDietService.calculate(req));
     }
 
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class DietSaveRequest {
+        private Long userId;
+        private BigDecimal co2Kg;
+    }
+
     @Operation(summary = "식단 절감량 저장", description = "절약한 CO₂를 저장합니다. (하루 최대 3회)")
     @PostMapping(value = "/ingest/save", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<DietDTO> create(@RequestBody DietDTO body, Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
-        if (userId == null) throw new IllegalArgumentException("인증 필요");
-
-        var dto = dietService.createDietRecordWithDailyLimit(userId, body.getCo2Kg());
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<DietDTO> create(@RequestBody @Validated DietSaveRequest body) {
+        if (body.getUserId() == null) throw new IllegalArgumentException("userId는 필수입니다.");
+        var dto = dietService.createDietRecordWithDailyLimit(body.getUserId(), body.getCo2Kg());
         return ApiResponse.success(dto);
+    }
+
+    // 오늘 등록 횟수 조회
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class TodayCountDTO {
+        private int todayCount;
+    }
+
+    @Operation(summary = "오늘 등록 횟수 조회", description = "해당 사용자의 오늘 식단 기록 개수를 반환합니다.")
+    @GetMapping(value = "/{userId}/today/count", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<TodayCountDTO> getTodayCount(@PathVariable Long userId) {
+        int count = dietService.getTodayCount(userId);
+        return ApiResponse.success(TodayCountDTO.builder().todayCount(count).build());
     }
 
     @Operation(summary = "오늘 합계 조회", description = "해당 사용자의 오늘 하루 절감 CO₂ 총합을 반환합니다.")
