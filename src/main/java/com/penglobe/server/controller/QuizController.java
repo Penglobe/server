@@ -30,6 +30,7 @@ public class QuizController {
     @Operation(summary = "퀴즈 답 제출 및 포인트 적립", description = "사용자가 퀴즈 답을 제출하면 포인트가 적립됩니다. 정답 10포인트, 오답 1포인트")
     public ResponseEntity<?> submitAnswer(@RequestBody QuizRequestDTO requestDTO) {
         Boolean answer = requestDTO.getAnswer();
+        System.out.println("userId" + requestDTO.getUserId());
         try {
             int points = quizQuestionService.submitAnswer(answer,requestDTO);
             return ResponseEntity.ok(Map.of(

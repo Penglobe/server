@@ -1,6 +1,5 @@
 package com.penglobe.server.controller;
 
-import com.penglobe.server.domain.user.User;
 import com.penglobe.server.dto.ApiResponse;
 import com.penglobe.server.dto.survey.SurveyItemDTO;
 import com.penglobe.server.dto.survey.SurveyResultDTO;
@@ -10,7 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -27,9 +26,19 @@ public class SurveyController {
     //설문 가져오기
     @Operation(summary = "설문조회", description = "설문조사 항목과 선택지를 조회합니다.")
     @GetMapping("/today")
-    public ResponseEntity<List<SurveyItemDTO>> getTodaySurvey() {
+    public ResponseEntity<Map<String, Object>> getTodaySurvey(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+
+        // 오늘 설문 질문 가져오기
         List<SurveyItemDTO> todaySurvey = surveyService.getTodaySurvey();
-        return ResponseEntity.ok(todaySurvey);
+        boolean submitted = surveyService.hasSubmittedToday(userId);
+
+        // 결과 맵 생성
+        Map<String, Object> response = new HashMap<>();
+        response.put("submitted", submitted); // 오늘 제출 여부
+        response.put("questions", todaySurvey); // 오늘 설문 질문 배열
+
+        return ResponseEntity.ok(response);
     }
 
     //설문 제출
