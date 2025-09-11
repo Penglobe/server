@@ -65,9 +65,7 @@ public class DietService {
 
     // 100g -> 10 얼음  ==  1kg -> 100 얼음
     private static int toIceUnits(BigDecimal co2KgFixed2) {
-        return co2KgFixed2.multiply(BigDecimal.valueOf(100))
-                .setScale(0, RoundingMode.FLOOR)
-                .intValue();
+        return co2KgFixed2.setScale(0, RoundingMode.HALF_UP).intValue();
     }
 
     @Transactional

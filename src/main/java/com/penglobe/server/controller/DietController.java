@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,16 +46,15 @@ public class DietController {
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     public static class DietSaveRequest {
-        private Long userId;
         private BigDecimal co2Kg;
     }
 
     @Operation(summary = "식단 절감량 저장", description = "절약한 CO₂를 저장합니다. (하루 최대 3회)")
     @PostMapping(value = "/ingest/save", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<DietDTO> create(@RequestBody @Validated DietSaveRequest body) {
-        if (body.getUserId() == null) throw new IllegalArgumentException("userId는 필수입니다.");
-        var dto = dietService.createDietRecordWithDailyLimit(body.getUserId(), body.getCo2Kg());
+    public ApiResponse<DietDTO> create(@RequestBody @Validated DietSaveRequest body, Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        var dto = dietService.createDietRecordWithDailyLimit(userId, body.getCo2Kg());
         return ApiResponse.success(dto);
     }
 
