@@ -1,13 +1,18 @@
 package com.penglobe.server.service;
 
+import com.penglobe.server.domain.attendance.AttendanceType;
 import com.penglobe.server.domain.diet.DietRecord;
+import com.penglobe.server.domain.ledger.LedgerReason;
+import com.penglobe.server.domain.ledger.PointsLedger; // changeAmount에 '얼음' 수치를 기록
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.domain.user.UserCounters;
 import com.penglobe.server.dto.diet.DietDTO;
 import com.penglobe.server.repository.DietRecordRepository;
+import com.penglobe.server.repository.PointsLedgerRepository;
 import com.penglobe.server.repository.UserCountersRepository;
 import com.penglobe.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,6 +29,8 @@ public class DietService {
     private final DietRecordRepository dietRecordRepository;
     private final UserRepository userRepository;
     private final UserCountersRepository userCountersRepository;
+    private final PointsLedgerRepository pointsLedgerRepository;
+    private final AttendanceLogService attendanceLogService;
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     private static final int MAX_RECORDS_PER_DAY = 3;
@@ -55,13 +63,18 @@ public class DietService {
                 .build();
     }
 
+    // 100g -> 10 얼음  ==  1kg -> 100 얼음
+    private static int toIceUnits(BigDecimal co2KgFixed2) {
+        return co2KgFixed2.setScale(0, RoundingMode.HALF_UP).intValue();
+    }
+
     @Transactional
     public DietDTO createDietRecordWithDailyLimit(Long userId, BigDecimal co2Kg) {
         if (co2Kg == null || co2Kg.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("co2Kg는 0 이상이어야 합니다.");
         }
 
-        // 입력 즉시 2자리로 고정(셋째에서 반올림)
+        // 입력 즉시 2자리로 고정(셋째 자리 반올림)
         final BigDecimal fixed = fix(co2Kg);
 
         LocalDate today = LocalDate.now(KST);
@@ -86,13 +99,37 @@ public class DietService {
                         .build()
         );
 
-        // 누적 업데이트
+        // 얼음 적립 (100g -> 10 얼음)
+        int ice = toIceUnits(fixed);
+        if (ice > 0) {
+            Integer current = user.getTotalPoint();
+            if (current == null) current = 0;
+            user.setTotalPoint(current + ice);
+            userRepository.save(user);
+
+            // 적립 기록
+            PointsLedger ledger = PointsLedger.builder()
+                    .user(user)
+                    .changeAmount(ice)
+                    .reason(LedgerReason.DIET)
+                    .build();
+            pointsLedgerRepository.save(ledger);
+        }
+
+        //  누적 절감량 업데이트
+        userCountersRepository.addDietCo2(user, fixed);
         UserCounters counters = userCountersRepository.findById(userId)
                 .orElse(UserCounters.builder().user(user).userId(userId).build());
 
-        BigDecimal current = fix(counters.getTotalDietCo2Kg());
-        counters.setTotalDietCo2Kg(fix(current.add(fixed)));
-        userCountersRepository.save(counters);
+        // 출석 처리
+        boolean newAttendance = attendanceLogService
+                .markAttendance(user, AttendanceType.DIET);
+
+        if (newAttendance) {
+            log.info("오늘 첫 출석 인정 ✅");
+        } else {
+            log.info("이미 오늘 출석함 → 무시");
+        }
 
         int todayCountAfter = Math.toIntExact(todayCount + 1);
         return toDTO(saved, counters.getTotalDietCo2Kg(), todayCountAfter);
@@ -119,5 +156,15 @@ public class DietService {
         LocalDateTime start = startOfDayKST(dateKST);
         LocalDateTime end   = endOfDayKST(dateKST);
         return fix(nz(dietRecordRepository.sumCo2KgByUserAndPeriod(userId, start, end)));
+    }
+
+    @Transactional(readOnly = true)
+    public int getTodayCount(Long userId) {
+        LocalDate today = LocalDate.now(KST);
+        LocalDateTime start = startOfDayKST(today);
+        LocalDateTime end   = endOfDayKST(today);
+        long cnt = dietRecordRepository
+                .countByUser_UserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(userId, start, end);
+        return Math.toIntExact(cnt);
     }
 }
