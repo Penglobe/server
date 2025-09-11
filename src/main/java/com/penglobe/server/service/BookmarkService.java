@@ -29,7 +29,7 @@ public class BookmarkService {
     }
 
     public List<UserPlaceBookmark> findByUser(User user) {
-        return bookmarkRepository.findByUser(user);
+        return bookmarkRepository.findByUserOrderByCreatedAtDesc(user);
     }
 
     public UserPlaceBookmark get(Long id) {

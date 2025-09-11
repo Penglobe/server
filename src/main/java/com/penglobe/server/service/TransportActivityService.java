@@ -60,43 +60,50 @@ public class TransportActivityService {
         activity.setEndTime(LocalDateTime.now());
         activity.setDistanceM(distanceM);
 
-        // 🚩 CO₂ 절감량 계산
-        BigDecimal co2Kg = calculateCo2Saving(distanceM, activity.getMode());
-        activity.setCo2Kg(co2Kg);
-
         // ✅ duration 계산
         int durationM = 0;
         if (activity.getStartTime() != null && activity.getEndTime() != null) {
             durationM = (int) Duration.between(activity.getStartTime(), activity.getEndTime()).toMinutes();
         }
 
-        // ✅ 포인트 계산
-        int points = co2Kg.multiply(BigDecimal.valueOf(100))
-                .setScale(0, RoundingMode.FLOOR)
-                .intValue();
+        int points = 0;
+        BigDecimal co2Kg = BigDecimal.ZERO;
 
-        if (points > 0) {
-            User user = activity.getUser();
-            user.setTotalPoint(user.getTotalPoint() + points);
-            userRepository.save(user);
+        if (distanceM > 0) {
+            // 🚩 CO₂ 절감량 계산
+            co2Kg = calculateCo2Saving(distanceM, activity.getMode());
+            activity.setCo2Kg(co2Kg);
 
-            PointsLedger ledger = PointsLedger.builder()
-                    .user(user)
-                    .changeAmount(points)
-                    .reason(LedgerReason.TRANSPORT_ACTIVITY)
-                    .build();
-            pointsLedgerRepository.save(ledger);
-        }
+            // ✅ 포인트 계산
+            points = co2Kg.multiply(BigDecimal.valueOf(100))
+                    .setScale(0, RoundingMode.FLOOR)
+                    .intValue();
 
-        // ✅ UserCounters에 환경걸음 누적 절감량 업데이트
-        userCountersRepository.addDistanceCo2(activity.getUser(), co2Kg);
+            if (points > 0) {
+                User user = activity.getUser();
+                user.setTotalPoint(user.getTotalPoint() + points);
+                userRepository.save(user);
 
-        // 출석 로그 시도 (하루 1회만 인정)
-        boolean newAttendance = attendanceLogService.markAttendance(activity.getUser(), AttendanceType.TRANSPORT_ACTIVITY);
-        if (newAttendance) {
-            log.info("오늘 첫 출석 인정 ✅");
+                PointsLedger ledger = PointsLedger.builder()
+                        .user(user)
+                        .changeAmount(points)
+                        .reason(LedgerReason.TRANSPORT_ACTIVITY)
+                        .build();
+                pointsLedgerRepository.save(ledger);
+            }
+
+            // ✅ UserCounters에 환경걸음 누적 절감량 업데이트
+            userCountersRepository.addDistanceCo2(activity.getUser(), co2Kg);
+
+            // ✅ 출석 로그 (하루 1회만 인정)
+            boolean newAttendance = attendanceLogService.markAttendance(activity.getUser(), AttendanceType.TRANSPORT_ACTIVITY);
+            if (newAttendance) {
+                log.info("오늘 첫 출석 인정 ✅");
+            } else {
+                log.info("이미 오늘 출석함 → 무시");
+            }
         } else {
-            log.info("이미 오늘 출석함 → 무시");
+            log.info("이동 거리가 0 → 포인트/출석 처리 안함 ❌");
         }
 
         activityRepository.save(activity);
