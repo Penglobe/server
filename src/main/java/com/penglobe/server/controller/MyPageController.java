@@ -4,6 +4,7 @@ import com.penglobe.server.dto.ApiResponse;
 import com.penglobe.server.dto.DailyCarbonReductionDTO;
 import com.penglobe.server.dto.MyPageDTO;
 import com.penglobe.server.service.MyPageService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,7 @@ public class MyPageController {
         return ResponseEntity.ok(ApiResponse.success(myPageInfo));
     }
 
+    @Operation(summary = "마이페이지 달력", description = "달력에서 날짜 클릭시 해당 날짜의 일일 탄소 절감량 정보 출력")
     @GetMapping("/daily/{date}")
     public ResponseEntity<ApiResponse<DailyCarbonReductionDTO>> getDailyCarbonReduction(
             Authentication authentication,
@@ -40,6 +42,7 @@ public class MyPageController {
         return ResponseEntity.ok(ApiResponse.success(dailyReduction));
     }
 
+    @Operation(summary = "랭킹 TEST", description = "랭킹 관련 더미 데이터 등록")
     @PostMapping("/add-dummy-data")
     public ResponseEntity<ApiResponse<Void>> addDummyData(Authentication authentication) {
         Long userId = requireUserId(authentication);
@@ -47,6 +50,7 @@ public class MyPageController {
         return ResponseEntity.ok(ApiResponse.success(200, "더미 데이터 추가 성공", null));
     }
 
+    @Operation(summary = "출석 TEST", description = "출석 관련 더미 데이터 등록")
     @GetMapping("/attendance-dates")
     public ResponseEntity<ApiResponse<List<String>>> getAttendanceDates(Authentication authentication) {
         Long userId = requireUserId(authentication);
@@ -54,6 +58,7 @@ public class MyPageController {
         return ResponseEntity.ok(ApiResponse.success(dates));
     }
 
+    @Operation(summary = "TEST 출석 리셋", description = "데이터베이스에서 출석 카운터 및 관련 활동 초기화")
     @PostMapping("/reset-attendance")
     public ResponseEntity<ApiResponse<Void>> resetAttendance(Authentication authentication) {
         Long userId = requireUserId(authentication);

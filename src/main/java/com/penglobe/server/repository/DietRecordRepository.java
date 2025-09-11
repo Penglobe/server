@@ -46,8 +46,7 @@ public interface DietRecordRepository extends JpaRepository<DietRecord, Long> {
             LocalDateTime endOfDay
     );
 
-    @Query("SELECT d.createdAt FROM DietRecord d WHERE d.user.userId = :userId")
-    List<LocalDateTime> findCreatedAtByUserId(@Param("userId") Long userId);
+    
 
     void deleteByUser(User user);
 }
