@@ -12,7 +12,7 @@ import jakarta.annotation.PostConstruct;
 public class RankingScheduler {
 
     private final RankingService rankingService;
-    private boolean initialized = false; // Add this line
+    private boolean initialized = false;
 
     @Async
     @PostConstruct
@@ -37,9 +37,9 @@ public class RankingScheduler {
     }
 
     /**
-     * 5분마다 실시간 랭킹을 갱신합니다.
+     * 1시간마다 주간 랭킹을 갱신합니다.
      */
-    @Scheduled(cron = "0 */5 * * * ?")
+    @Scheduled(cron = "0 0 * * * ?")
     public void scheduleLiveRankingUpdate() {
         rankingService.updateLiveWeeklyRanking();
     }
@@ -54,17 +54,17 @@ public class RankingScheduler {
     }
 
     /**
-     * 매일 새벽 2시에 전체 랭킹을 갱신합니다.
+     * 1시간마다 전체 랭킹을 갱신합니다.
      */
-    @Scheduled(cron = "0 0 2 * * ?")
+    @Scheduled(cron = "0 0 * * * ?")
     public void scheduleAllRankingUpdate() {
         rankingService.updateAllRanking();
     }
 
     /**
-     * 매일 새벽 3시에 지역별 랭킹 점수를 갱신합니다.
+     * 매일 자정에 지역별 랭킹 점수를 갱신합니다.
      */
-    @Scheduled(cron = "0 0 3 * * ?")
+    @Scheduled(cron = "0 0 0 * * ?")
     public void scheduleRegionRankingUpdate() {
         rankingService.updateRegionRankings();
     }

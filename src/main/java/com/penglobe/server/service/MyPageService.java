@@ -1,15 +1,11 @@
 package com.penglobe.server.service;
 
-import com.penglobe.server.domain.attendance.AttendanceLog;
-import com.penglobe.server.domain.attendance.AttendanceType;
 import com.penglobe.server.domain.ranking.WeeklyRankingParticipant;
 import com.penglobe.server.domain.user.User;
 import com.penglobe.server.domain.user.UserCounters;
 import com.penglobe.server.dto.DailyCarbonReductionDTO;
 import com.penglobe.server.dto.MyPageDTO;
 import com.penglobe.server.repository.*;
-import com.penglobe.server.domain.transport.TransportActivity;
-import com.penglobe.server.domain.transport.TransportMode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +14,9 @@ import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +31,6 @@ public class MyPageService {
     private final RankingService rankingService;
     private final WeeklyRankingParticipantRepository weeklyRankingParticipantRepository;
     private final AttendanceLogRepository attendanceLogRepository; // Injected
-    private final TransportActivityService transportActivityService;
-    private final AttendanceLogService attendanceLogService;
 
     public MyPageDTO getMyPageInfo(Long userId) {
         User user = userRepository.findByUserId(userId)
@@ -101,14 +92,9 @@ public class MyPageService {
     }
 
     public List<String> getAttendanceDates(Long userId) {
-        // 1. Fetch datetime lists from both repositories
-        List<LocalDateTime> transportDates = transportActivityRepository.findStartTimeByUserId(userId);
-        List<LocalDateTime> dietDates = dietRecordRepository.findCreatedAtByUserId(userId);
-
-        // 2. Combine, convert to LocalDate, and remove duplicates
-        return Stream.concat(transportDates.stream(), dietDates.stream())
-                .map(LocalDateTime::toLocalDate)
-                .distinct()
+        // 1. Fetch sorted, distinct dates directly from the attendance_logs table
+        return attendanceLogRepository.findDatesByUserId(userId)
+                .stream()
                 .sorted()
                 .map(LocalDate::toString)
                 .collect(Collectors.toList());
@@ -118,69 +104,17 @@ public class MyPageService {
     public void addDummyData(Long userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
-        UserCounters counters = userCountersRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("UserCounters not found for user ID: " + userId));
+        // UserCounters counters = userCountersRepository.findByUserId(userId)
+        //         .orElseThrow(() -> new IllegalArgumentException("UserCounters not found for user ID: " + userId));
 
-        List<LocalDate> datesToAdd = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
-            datesToAdd.add(LocalDate.now().minusDays(i));
-        }
-        // Process dates in chronological order for correct streak calculation
-        Collections.sort(datesToAdd);
+        // 더미 TransportActivity 생성 및 수동 출석 업데이트 로직 제거.
+        // 이 메서드는 이제 테스트 목적으로 랭킹 업데이트만 트리거합니다.
 
-        for (LocalDate date : datesToAdd) {
-            // 1. Create dummy TransportActivity
-            LocalDateTime activityTime = date.atStartOfDay().plusHours(9);
-            TransportActivity dummyActivity = TransportActivity.builder()
-                    .user(user)
-                    .mode(TransportMode.WALK)
-                    .startTime(activityTime)
-                    .endTime(activityTime.plusMinutes(30))
-                    .distanceM(1000)
-                    .co2Kg(BigDecimal.valueOf(1.5))
-                    .build();
-            TransportActivity savedActivity = transportActivityRepository.save(dummyActivity);
-
-            // Call stopActivity to calculate points and update user's totalPoint
-            transportActivityService.stopActivity(savedActivity.getTransportId(), savedActivity.getDistanceM(), null);
-
-            // 2. Mark attendance (logic copied and adapted from AttendanceLogService)
-            // Check if attendance for this day already exists
-            if (!attendanceLogRepository.existsByUserAndDate(user, date)) {
-                // Save new attendance log
-                AttendanceLog log = AttendanceLog.builder()
-                        .user(user)
-                        .date(date)
-                        .attendanceType(AttendanceType.TRANSPORT_ACTIVITY)
-                        .shownAt(date)
-                        .build();
-                attendanceLogRepository.save(log);
-            }
-
-                // ONLY update counters IF a new attendance log was created
-                counters.setAttendanceTotalDays(counters.getAttendanceTotalDays() + 1);
-
-                if (date.equals(counters.getLastAttendanceDate() != null ? counters.getLastAttendanceDate().plusDays(1) : null)) {
-                    // Consecutive day
-                    counters.setAttendanceStreakDays(counters.getAttendanceStreakDays() + 1);
-                } else {
-                    // Streak is broken or it's the first attendance
-                    counters.setAttendanceStreakDays(1);
-                }
-
-                if (counters.getAttendanceStreakDays() > counters.getLongestAttendanceStreak()) {
-                    counters.setLongestAttendanceStreak(counters.getAttendanceStreakDays());
-                }
-                counters.setLastAttendanceDate(date);
-            }
-        userCountersRepository.flush();
-        userCountersRepository.save(counters); // Save all counter updates at the end
-
-        // Set a dummy last week rank for testing persistent participation
+        // 지속적인 참여 테스트를 위한 더미 지난주 랭크 설정
         user.setLastWeekRank(1);
         userRepository.save(user);
 
-        // Ensure user is in current week's participant list
+        // 현재 주의 참여자 목록에 사용자가 있는지 확인
         LocalDate currentWeekStartDate = LocalDate.now().with(DayOfWeek.MONDAY);
         if (!weeklyRankingParticipantRepository.existsByUserIdAndWeekStartDate(userId, currentWeekStartDate)) {
             WeeklyRankingParticipant participant = WeeklyRankingParticipant.builder()
@@ -190,7 +124,8 @@ public class MyPageService {
             weeklyRankingParticipantRepository.save(participant);
         }
 
-        // Force update rankings immediately
+        // 즉시 랭킹 업데이트 강제 실행
+        rankingService.selectWeeklyParticipants();
         rankingService.updateLiveWeeklyRanking();
         rankingService.updateAllRanking();
         rankingService.updateRegionRankings();
