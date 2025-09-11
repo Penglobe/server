@@ -27,6 +27,7 @@ public class MyPageService {
     private final UserCountersRepository userCountersRepository;
     private final TransportActivityRepository transportActivityRepository;
     private final DietRecordRepository dietRecordRepository;
+    private final SurveyResponseRepository surveyResponseRepository;
     private final RegionRepository regionRepository;
     private final RankingService rankingService;
     private final WeeklyRankingParticipantRepository weeklyRankingParticipantRepository;
@@ -82,15 +83,19 @@ public class MyPageService {
                 .map(record -> Optional.ofNullable(record.getCo2Kg()).orElse(BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalCo2Kg = transportCo2Kg.add(dietCo2Kg);
+        // Fetch SurveyResponse for the given user and date
+        // SurveyResponse has LocalDate createdAt from BaseEntity, so we can use that for date filtering
+        BigDecimal surveyCo2Kg = surveyResponseRepository.sumTotalCo2KgByUserAndPeriod(userId, startOfDay, endOfDay);
+
+        BigDecimal totalCo2Kg = transportCo2Kg.add(dietCo2Kg).add(surveyCo2Kg);
 
         return DailyCarbonReductionDTO.builder()
                 .transportCo2Kg(transportCo2Kg)
                 .dietCo2Kg(dietCo2Kg)
+                .surveyCo2Kg(surveyCo2Kg) // Populate new field
                 .totalCo2Kg(totalCo2Kg)
                 .build();
     }
-
     public List<String> getAttendanceDates(Long userId) {
         // 1. Fetch sorted, distinct dates directly from the attendance_logs table
         return attendanceLogRepository.findDatesByUserId(userId)
