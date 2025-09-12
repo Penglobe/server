@@ -38,19 +38,17 @@ public class PointLedgerService {
                         l.getCreatedAt(),
                         l.getChangeAmount(),
                         l.getReason(),
-                        l.getUser().getTotalPoint()
+                        l.getBalanceAfter()
                 ))
                 .collect(Collectors.toList());
     }
 
-    // 잔액 조회
+    // 현재 잔액 조회 (Ledger 말고 User 캐시 활용)
     public BalanceDTO getCurrentBalance(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 사용자입니다."));
 
-        PointsLedger latest = pointsLedgerRepository.findTopByUserOrderByCreatedAtDesc(user);
-        Integer balance = latest != null ? latest.getUser().getTotalPoint() : 0;
-
-        return new BalanceDTO(balance);
+        return new BalanceDTO(user.getTotalPoint()); // ✅ Ledger 안 거치고 바로 조회
     }
+
 }

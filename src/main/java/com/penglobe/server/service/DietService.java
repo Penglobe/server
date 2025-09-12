@@ -104,7 +104,9 @@ public class DietService {
         if (ice > 0) {
             Integer current = user.getTotalPoint();
             if (current == null) current = 0;
-            user.setTotalPoint(current + ice);
+
+            int updatedBalance = current + ice;
+            user.setTotalPoint(updatedBalance);
             userRepository.save(user);
 
             // 적립 기록
@@ -112,6 +114,7 @@ public class DietService {
                     .user(user)
                     .changeAmount(ice)
                     .reason(LedgerReason.DIET)
+                    .balanceAfter(updatedBalance)
                     .build();
             pointsLedgerRepository.save(ledger);
         }

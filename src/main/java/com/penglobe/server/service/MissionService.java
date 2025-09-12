@@ -145,13 +145,15 @@ public class MissionService {
 
             int reward = rewardOf(20L);
             User user = userRepo.findById(userId).orElseThrow();
-            user.setTotalPoint(user.getTotalPoint() + reward);
+            int newBalance = user.getTotalPoint() + reward;
+            user.setTotalPoint(newBalance);
 
             pointsLedgerRepo.save(
                     PointsLedger.builder()
                             .user(user)
                             .changeAmount(reward)
                             .reason(LedgerReason.MISSION_REWARD)
+                            .balanceAfter(newBalance)
                             .build()
             );
             return;
@@ -202,6 +204,7 @@ public class MissionService {
                             .user(user)
                             .changeAmount(reward)               // +포인트
                             .reason(LedgerReason.MISSION_REWARD) // 사유(레저 enum)
+                            .balanceAfter(newBalance)
                             .build()
             );
 
