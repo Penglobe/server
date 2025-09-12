@@ -1,5 +1,6 @@
 package com.penglobe.server.dto;
 
+import com.penglobe.server.domain.user.UserType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,12 +26,14 @@ public class AuthDTO {
         public String refreshToken;
         public boolean profileCompleted;
         public long userId;
+        public UserType type;
 
-        public AuthResponse(String at, String rt, boolean pc, long id) {
+        public AuthResponse(String at, String rt, boolean pc, long id, UserType type) {
             this.accessToken = at;
             this.refreshToken = rt;
             this.profileCompleted = pc;
             this.userId = id;
+            this.type = type;
         }
     }
 

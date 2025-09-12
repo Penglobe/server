@@ -63,7 +63,7 @@ public class AuthService {
         return new AuthResponse(accessToken,
                 refreshToken,
                 Boolean.TRUE.equals(user.getIsProfileComplete()),
-                user.getUserId());
+                user.getUserId(), user.getType());
     }
 
     //자체 회원가입
@@ -95,9 +95,9 @@ public class AuthService {
         if (user.getPasswordHash() == null || !passwordEncoder.matches(req.password, user.getPasswordHash())) {
             throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
-        String accessToken = jwtTokenProvider.createToken(user.getUserId(), "USER");
+        String accessToken = jwtTokenProvider.createToken(user.getUserId(), user.getType().toString());
         String refreshToken = tokenService.issueFor(user.getUserId());
-        return new AuthResponse(accessToken, refreshToken, Boolean.TRUE.equals(user.getIsProfileComplete()), user.getUserId());
+        return new AuthResponse(accessToken, refreshToken, Boolean.TRUE.equals(user.getIsProfileComplete()), user.getUserId(), user.getType());
     }
 
     // 카카오용 프로필 완료 API: 지역/닉네임 받아 complete=true
