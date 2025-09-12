@@ -33,7 +33,14 @@ public class OrderService {
                 .orElseThrow(() -> new IllegalArgumentException("상품이 없습니다."));
 
         int qty = req.getQty();
-        int need = product.getPrice() * qty;
+        int need;
+
+        // [기부] 상품이면 사용자가 입력한 qty가 곧 포인트 차감 금액
+        if (product.getName().startsWith("[기부]")) {
+            need = qty;
+        } else {
+            need = product.getPrice() * qty;
+        }
 
         // 포인트 원자 차감 (0이면 부족)
         int updated = userRepository.deductPoints(userId, need);
@@ -52,7 +59,9 @@ public class OrderService {
                 PointsLedger.builder()
                         .user(userRef)
                         .changeAmount(-need)
-                        .reason(LedgerReason.SHOP_PURCHASE)
+                        .reason(product.getName().startsWith("[기부]")
+                                ? LedgerReason.DONATION
+                                : LedgerReason.SHOP_PURCHASE)
                         .balanceAfter(userRef.getTotalPoint()) //차감 후 잔액 기록
                         .build()
         );
@@ -83,6 +92,7 @@ public class OrderService {
                 .productName(o.getProduct().getName())
                 .status(o.getStatus() == null ? null : o.getStatus().name()) // ← Enum → String
                 .createdAt(o.getCreatedAt())
+                .price(o.getProduct().getPrice())
                 .build();
     }
 }
