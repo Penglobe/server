@@ -38,7 +38,7 @@ public class SecurityConfig {
                         // Shop, Ranking, Uploads
                         .requestMatchers(HttpMethod.GET,
                                 "/shop/products", "/shop/products/**",
-                                "/rankings/regions", "/uploads/**").permitAll()
+                                "/rankings/regions", "/uploads/**", "/pay/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         // OPTIONS (CORS preflight)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
