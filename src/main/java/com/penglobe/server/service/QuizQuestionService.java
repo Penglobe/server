@@ -54,10 +54,17 @@ public class QuizQuestionService {
 
         // 포인트 지급
         int points = (correctAnswer != null && correctAnswer.equals(userAnswer)) ? 10 : 1;
-        user.setTotalPoint(user.getTotalPoint() + points);
+        int updatedBalance = user.getTotalPoint() + points;
+        user.setTotalPoint(updatedBalance);
 
         // PointsLedger 생성 후 저장
-        PointsLedger ledger = new PointsLedger(null, user, points, LedgerReason.QUIZ);
+        PointsLedger ledger = PointsLedger.builder()
+                .user(user)
+                .changeAmount(points)
+                .reason(LedgerReason.QUIZ)
+                .balanceAfter(updatedBalance)
+                .build();
+
         pointsLedgerRepository.save(ledger);
         userRepository.save(user);
 

@@ -81,13 +81,18 @@ public class TransportActivityService {
 
             if (points > 0) {
                 User user = activity.getUser();
-                user.setTotalPoint(user.getTotalPoint() + points);
+
+                // ✅ 유저 총 포인트 갱신
+                int updatedBalance = user.getTotalPoint() + points;
+                user.setTotalPoint(updatedBalance);
                 userRepository.save(user);
 
+                // ✅ Ledger 생성 시 balanceAfter 반영
                 PointsLedger ledger = PointsLedger.builder()
                         .user(user)
                         .changeAmount(points)
                         .reason(LedgerReason.TRANSPORT_ACTIVITY)
+                        .balanceAfter(updatedBalance)
                         .build();
                 pointsLedgerRepository.save(ledger);
             }

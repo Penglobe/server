@@ -53,6 +53,7 @@ public class OrderService {
                         .user(userRef)
                         .changeAmount(-need)
                         .reason(LedgerReason.SHOP_PURCHASE)
+                        .balanceAfter(userRef.getTotalPoint()) //차감 후 잔액 기록
                         .build()
         );
 

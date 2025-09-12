@@ -117,15 +117,17 @@ public class AttendanceLogService {
 
         User user = userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("User Not Fount"));
 
+        int updatedBalance = user.getTotalPoint() + reward;
+        user.setTotalPoint(updatedBalance);
+        userRepository.save(user);
+
         PointsLedger ledger = PointsLedger.builder()
                 .user(userRepository.getReferenceById(userId))
                 .changeAmount(reward)
                 .reason(LedgerReason.ATTENDANCE)
+                .balanceAfter(updatedBalance)
                 .build();
         pointsLedgerRepository.save(ledger);
-
-        user.setTotalPoint(user.getTotalPoint() + reward);
-        userRepository.save(user);
 
         log.setShownAt(today);
         return reward;
