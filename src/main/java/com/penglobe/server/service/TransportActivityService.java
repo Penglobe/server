@@ -6,7 +6,6 @@ import com.penglobe.server.domain.ledger.PointsLedger;
 import com.penglobe.server.domain.transport.TransportActivity;
 import com.penglobe.server.domain.transport.TransportMode;
 import com.penglobe.server.domain.user.User;
-import com.penglobe.server.domain.user.UserCounters;
 import com.penglobe.server.dto.TransportActivityDto;
 import com.penglobe.server.repository.PointsLedgerRepository;
 import com.penglobe.server.repository.TransportActivityRepository;
@@ -60,7 +59,6 @@ public class TransportActivityService {
         activity.setEndTime(LocalDateTime.now());
         activity.setDistanceM(distanceM);
 
-        // ✅ duration 계산
         int durationM = 0;
         if (activity.getStartTime() != null && activity.getEndTime() != null) {
             durationM = (int) Duration.between(activity.getStartTime(), activity.getEndTime()).toMinutes();
@@ -72,12 +70,12 @@ public class TransportActivityService {
         if (distanceM > 0) {
             // 🚩 CO₂ 절감량 계산
             co2Kg = calculateCo2Saving(distanceM, activity.getMode());
-            activity.setCo2Kg(co2Kg);
+            activity.setCo2Kg(co2Kg.setScale(2, RoundingMode.HALF_UP)); // DB에는 보기 좋게 저장
 
-            // ✅ 포인트 계산
+            // ✅ 포인트 계산 (정수로만 관리)
             points = co2Kg.multiply(BigDecimal.valueOf(100))
-                    .setScale(0, RoundingMode.FLOOR)
-                    .intValue();
+                    .setScale(0, RoundingMode.FLOOR) // 소수점 버림
+                    .intValueExact();
 
             if (points > 0) {
                 User user = activity.getUser();
@@ -97,10 +95,10 @@ public class TransportActivityService {
                 pointsLedgerRepository.save(ledger);
             }
 
-            // ✅ UserCounters에 환경걸음 누적 절감량 업데이트
+            // ✅ UserCounters 업데이트 (환경 절감량 누적)
             userCountersRepository.addDistanceCo2(activity.getUser(), co2Kg);
 
-            // ✅ 출석 로그 (하루 1회만 인정)
+            // ✅ 출석 로그
             boolean newAttendance = attendanceLogService.markAttendance(activity.getUser(), AttendanceType.TRANSPORT_ACTIVITY);
             if (newAttendance) {
                 log.info("오늘 첫 출석 인정 ✅");
@@ -113,6 +111,10 @@ public class TransportActivityService {
 
         activityRepository.save(activity);
 
+        // 📌 디버깅 로그
+        log.info("최종 계산 결과 → co2Kg={}, points={}, totalPoint={}",
+                co2Kg, points, activity.getUser().getTotalPoint());
+
         return TransportActivityDto.fromEntity(activity, durationM, points);
     }
 
@@ -121,7 +123,7 @@ public class TransportActivityService {
      */
     private BigDecimal calculateCo2Saving(int distanceM, TransportMode mode) {
         BigDecimal km = BigDecimal.valueOf(distanceM)
-                .divide(BigDecimal.valueOf(1000), 4, RoundingMode.HALF_UP);
+                .divide(BigDecimal.valueOf(1000), 6, RoundingMode.HALF_UP); // 정밀도 높게 유지
 
         // 🚗 승용차 평균 배출량: 0.2 kg/km
         BigDecimal carCo2Kg = km.multiply(BigDecimal.valueOf(0.2));
@@ -132,7 +134,7 @@ public class TransportActivityService {
             case TRANSIT -> 0.5;    // 대중교통은 절반만 인정
         };
 
-        return carCo2Kg.multiply(BigDecimal.valueOf(factor))
-                .setScale(2, RoundingMode.HALF_UP); // ✅ 소수점 둘째 자리까지
+        // 절감량은 정밀하게 계산 (DB 저장 시만 반올림)
+        return carCo2Kg.multiply(BigDecimal.valueOf(factor));
     }
 }
