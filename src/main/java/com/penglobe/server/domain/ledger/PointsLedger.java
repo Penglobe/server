@@ -31,7 +31,7 @@ public class PointsLedger extends BaseEntity {
     private Integer changeAmount;  // +적립 / -차감
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "reason", nullable = false, length = 30)
+    @Column(name = "reason", nullable = false, length = 80)
     private LedgerReason reason;
 
     @Column(name = "balance_after", nullable = false)

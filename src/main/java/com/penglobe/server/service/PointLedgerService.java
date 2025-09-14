@@ -31,8 +31,6 @@ public class PointLedgerService {
         List<PointsLedger> pointlist =
                 pointsLedgerRepository.findByUserOrderByCreatedAtDesc(user);
 
-
-
         return pointlist.stream()
                 .map(l -> new PointDTO(
                         l.getCreatedAt(),

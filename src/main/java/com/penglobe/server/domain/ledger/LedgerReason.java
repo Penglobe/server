@@ -7,5 +7,6 @@ public enum LedgerReason {
     QUIZ,
     SURVEY,
     MISSION_REWARD,
-    SHOP_PURCHASE
+    SHOP_PURCHASE,
+    PAYMENT
 }
