@@ -8,5 +8,6 @@ public enum LedgerReason {
     SURVEY,
     MISSION_REWARD,
     SHOP_PURCHASE,
-    PAYMENT
+    PAYMENT,
+    DONATION
 }

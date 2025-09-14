@@ -18,6 +18,7 @@ public class OrderDTO {
 
     @NotNull @Min(1)
     private Integer qty;
+    private Integer price;
 
     // ===== 응답 전용 필드 =====
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -35,4 +36,6 @@ public class OrderDTO {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
+
+
 }

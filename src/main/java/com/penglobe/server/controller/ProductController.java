@@ -68,6 +68,34 @@ public class ProductController {
                     .body(ApiResponse.fail(400, e.getMessage()));
         }
     }
+    @Operation(summary = "기부 생성 - multipart", description = "이미지 파일 업로드로 기부 등록")
+    @PostMapping(value = "/donation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<ProductDTO>> createDonation(
+            @RequestParam("name") String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "image", required = false) MultipartFile image
+    ) {
+        try {
+            String imgPath = (image != null && !image.isEmpty())
+                    ? uploadService.saveImage(image)
+                    : null;
+
+            ProductDTO req = new ProductDTO();
+            req.setName("[기부] " + name);
+            req.setDescription(description);
+            req.setPrice(req.getPrice() != null ? req.getPrice() : 0); // null이면 0으로 처리
+            req.setImg(imgPath);
+
+            ProductDTO res = productService.createDonation(req);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .location(URI.create("/shop/products/" + res.getProductId()))
+                    .body(ApiResponse.success(201, "상품 생성 완료", res));
+        } catch (Exception e) {
+            // 디버깅 편의: 원인 그대로 내려주기
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail(400, e.getMessage()));
+        }
+    }
 
     @Operation(summary = "상품 수정 - multipart", description = "부분 수정 + 이미지 교체 가능")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)

@@ -41,6 +41,17 @@ public class ProductService {
         return toDTO(saved);
     }
 
+    //기부하기
+    @Transactional
+    public ProductDTO createDonation(ProductDTO req) {
+        validateRequiredForCreateForDonation(req);
+
+        Products p = new Products();
+        applyCreate(p, req);
+        Products saved = productsRepository.save(p);
+        return toDTO(saved);
+    }
+
     /** 수정: req.img == null 이면 기존 이미지 유지, 값이 있으면 교체 */
     @Transactional
     public void update(Long id, ProductDTO req) {
@@ -90,6 +101,13 @@ public class ProductService {
         if (req.getPrice() == null) {
             throw new IllegalArgumentException("가격은 필수입니다.");
         }
+    }
+
+    private void validateRequiredForCreateForDonation(ProductDTO req) {
+        if (req.getName() == null || req.getName().isBlank()) {
+            throw new IllegalArgumentException("기부명은 필수입니다.");
+        }
+
     }
 
     private ProductDTO toDTO(Products p) {

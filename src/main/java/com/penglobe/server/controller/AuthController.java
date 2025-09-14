@@ -60,6 +60,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LocalLoginRequest req) {
         AuthResponse res = authService.loginLocal(req);
+
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success(200, "로그인 성공", res));
