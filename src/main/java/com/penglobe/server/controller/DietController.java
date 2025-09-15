@@ -1,5 +1,6 @@
 package com.penglobe.server.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.penglobe.server.dto.ApiResponse;
 import com.penglobe.server.dto.diet.DietDTO;
 import com.penglobe.server.dto.diet.DietRequestDTO;
@@ -16,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ public class DietController {
 
     private final DietService dietService;
     private final LlmDietService llmDietService;
+    private final ObjectMapper om;
 
     @Operation(summary = "식단 기록 생성", description = "하루 최대 3회까지 등록 가능합니다.")
     @PostMapping(value = "/ingest", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -40,8 +43,28 @@ public class DietController {
 
     @Operation(summary = "식단 기록 & LLM 연결", description = "식단 탄소 배출량을 AI가 계산하여 반환합니다.")
     @PostMapping(value = "/ingest/calc", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<DietResultDTO> calc(@RequestBody DietRequestDTO req) {
-        return ApiResponse.success(llmDietService.calculate(req));
+    public ApiResponse<DietResultDTO> calc(@RequestBody String rawJson) {
+        // ✅ 프론트 원문 로그 (디버그만)
+        log.debug("[Diet][REQ raw] {}", rawJson);
+
+        try {
+            // DTO 변환 + 검증
+            DietRequestDTO req = om.readValue(rawJson, DietRequestDTO.class);
+
+            // 보기 좋게 DTO 로그
+            log.debug("[Diet][REQ dto] {}", om.writerWithDefaultPrettyPrinter().writeValueAsString(req));
+
+            return ApiResponse.success(llmDietService.calculate(req));
+
+        } catch (IllegalArgumentException e) {
+            log.warn("[Diet][400] {}", e.getMessage());
+            // ApiResponse.fail(...) 형태가 있으면 사용, 없으면 예외 던져도 됨
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+
+        } catch (Exception e) {
+            log.error("[Diet][500] 처리 중 오류", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류", e);
+        }
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder

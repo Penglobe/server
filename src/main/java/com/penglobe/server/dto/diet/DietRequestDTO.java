@@ -1,5 +1,7 @@
 package com.penglobe.server.dto.diet;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -18,6 +20,10 @@ public class DietRequestDTO {
     private Long userId;
     private List<FoodItem> items;
 
+    @NotNull
+    @JsonAlias({"mealType","eat_mode","eatMode"})
+    private EatMode eatMode;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -30,5 +36,13 @@ public class DietRequestDTO {
         private Object serving;
         private Object amount;
         private Object nutrition;
+    }
+
+    public enum EatMode {
+        HOME, DELIVERY, TAKEOUT, RESTAURANT;
+        @JsonCreator
+        public static EatMode from(String v) {
+            return v == null ? null : EatMode.valueOf(v.trim().toUpperCase());
+        }
     }
 }
