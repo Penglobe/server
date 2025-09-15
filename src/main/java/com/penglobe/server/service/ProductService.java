@@ -2,6 +2,7 @@ package com.penglobe.server.service;
 
 import com.penglobe.server.domain.shop.Products;
 import com.penglobe.server.dto.ProductDTO;
+import com.penglobe.server.repository.OrdersRepository;
 import com.penglobe.server.repository.ProductsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -16,6 +17,7 @@ import java.util.List;
 public class ProductService {
 
     private final ProductsRepository productsRepository;
+    private final OrdersRepository ordersRepository;
 
     /** 목록 (최신 ID 순) */
     public List<ProductDTO> list() {
@@ -58,11 +60,15 @@ public class ProductService {
         Products p = productsRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("상품이 없습니다."));
         applyUpdate(p, req); // Dirty Checking
+        productsRepository.save(p);
     }
 
     /** 삭제 (이미지 파일 정리는 컨트롤러/UploadService에서 수행) */
     @Transactional
     public void delete(Long id) {
+        if (ordersRepository.existsByProduct_ProductId(id)) {
+            throw new IllegalStateException("내역이 있어 삭제할 수 없습니다.");
+        }
         productsRepository.deleteById(id);
     }
 
@@ -87,7 +93,7 @@ public class ProductService {
     private void applyUpdate(Products p, ProductDTO req) {
         if (req.getName() != null)        p.setName(req.getName());
         if (req.getDescription() != null) p.setDescription(req.getDescription());
-        if (req.getPrice() != null)       p.setPrice(req.getPrice());
+        //if (req.getPrice() != null)       p.setPrice(req.getPrice());
         // 새 이미지가 전달된 경우에만 교체 (null이면 기존 유지)
         if (req.getImg() != null && !req.getImg().isBlank()) {
             p.setImg(req.getImg());
