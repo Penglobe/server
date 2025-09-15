@@ -16,7 +16,6 @@ public interface QuizQuestionRepository extends JpaRepository<QuizQuestions, Lon
     @Query("SELECT q FROM QuizQuestions q WHERE q.quizId = :quizId")
     Optional<QuizQuestions> findByQuizId(@Param("quizId") Long quizId);
 
-
     @Query("SELECT MIN(q.quizId) FROM QuizQuestions q")
     Long findMinId();
 

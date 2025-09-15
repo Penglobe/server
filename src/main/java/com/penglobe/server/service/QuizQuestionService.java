@@ -32,12 +32,14 @@ public class QuizQuestionService {
     }
 
     // 답 제출 + 포인트 적립
-    public int submitAnswer(Boolean userAnswer, QuizRequestDTO request) {
+    public boolean submitAnswer(Boolean userAnswer, QuizRequestDTO request) {
 
         //중복 제출 확인 및 메시지
-        long submitted = pointsLedgerRepository.countTodayQuizSubmit(request.getUserId());
-        if(submitted >= 1) {
-            throw new IllegalStateException("오늘 퀴즈는 이미 제출했습니다. \n 포인트는 지급되지 않습니다.");
+        Long count = pointsLedgerRepository.countTodayQuizSubmit(request.getUserId());
+        boolean submitted = count != null && count > 0;
+
+        if (submitted) {
+            return true;
         }
 
         long quizId = request.getQuizId();
@@ -49,8 +51,6 @@ public class QuizQuestionService {
         // 사용자 조회
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        System.out.println("userId" + user.getUserId());
 
         // 포인트 지급
         int points = (correctAnswer != null && correctAnswer.equals(userAnswer)) ? 10 : 1;
@@ -68,6 +68,6 @@ public class QuizQuestionService {
         pointsLedgerRepository.save(ledger);
         userRepository.save(user);
 
-        return points;
+        return false;
     }
 }

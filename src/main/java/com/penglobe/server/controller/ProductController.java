@@ -3,6 +3,7 @@ package com.penglobe.server.controller;
 
 import com.penglobe.server.dto.ApiResponse;
 import com.penglobe.server.dto.ProductDTO;
+import com.penglobe.server.repository.OrdersRepository;
 import com.penglobe.server.service.ProductService;
 import com.penglobe.server.service.UploadService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +25,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final UploadService uploadService;
+    private final OrdersRepository ordersRepository;
 
     @Operation(summary = "상품 목록")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -100,11 +102,12 @@ public class ProductController {
     @Operation(summary = "상품 수정 - multipart", description = "부분 수정 + 이미지 교체 가능")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<Void>> update(
+
             @PathVariable Long id,
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "description", required = false) String description,
-            @RequestParam(value = "price", required = false) Integer price,
-            @RequestParam(value = "image", required = false) MultipartFile image
+            @RequestPart(value = "name", required = false) String name,
+            @RequestPart(value = "description", required = false) String description,
+            @RequestPart(value = "price", required = false) Integer price,
+            @RequestPart(value = "image", required = false) MultipartFile image
     ) {
         try {
             String newImg = null;
@@ -121,6 +124,7 @@ public class ProductController {
             req.setImg(newImg); // null이면 기존 유지
 
             productService.update(id, req);
+
             return ResponseEntity.status(HttpStatus.NO_CONTENT)
                     .body(ApiResponse.success(204, "상품 수정 완료", null));
         } catch (Exception e) {
@@ -132,15 +136,17 @@ public class ProductController {
     @Operation(summary = "상품 삭제")
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+
         try {
             String oldImg = productService.findImgPath(id);
-            productService.delete(id);
+            productService.delete(id); // 실제 삭제
             uploadService.deleteIfExists(oldImg);
+
             return ResponseEntity.status(HttpStatus.NO_CONTENT)
                     .body(ApiResponse.success(204, "상품 삭제 완료", null));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.fail(400, e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.fail(500, e.getMessage()));
         }
     }
 
