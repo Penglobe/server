@@ -21,8 +21,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,25 +49,30 @@ public class RankingService {
         LocalDate today = LocalDate.now();
         LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
 
-        // 1. Try to find users who ranked last week.
-        List<User> participants = userRepository.findUsersWithLastWeekRank();
+        // 1. Get users who ranked last week (Group A)
+        List<User> rankedLastWeek = userRepository.findUsersWithLastWeekRank();
 
-        // 2. If no one ranked last week (cold start or error), use fallback.
-        if (participants.isEmpty()) {
-            System.out.println("No users with last week's rank found. Using fallback rule (active in last 7 days).");
-            LocalDate sevenDaysAgo = today.minusDays(7);
-            participants = userCountersRepository.findUsersActiveSince(sevenDaysAgo);
-        }
+        // 2. Get users who were active in the last 7 days (Group B)
+        LocalDate sevenDaysAgo = today.minusDays(7);
+        List<User> activeRecently = userCountersRepository.findUsersActiveSince(sevenDaysAgo);
 
-        // 3. Store the selected participants for the week.
+        // 3. Combine both lists and remove duplicates using a Set
+        Set<User> combinedParticipants = new HashSet<>(rankedLastWeek);
+        combinedParticipants.addAll(activeRecently);
+
+        // 4. Store the final list of participants for the week
         weeklyRankingParticipantRepository.deleteAllInBatch();
-        List<WeeklyRankingParticipant> participantEntities = participants.stream()
+
+        List<WeeklyRankingParticipant> participantEntities = combinedParticipants.stream()
                 .map(user -> WeeklyRankingParticipant.builder()
                         .userId(user.getUserId())
                         .weekStartDate(startOfWeek)
                         .build())
                 .toList();
-        weeklyRankingParticipantRepository.saveAll(participantEntities);
+
+        if (!participantEntities.isEmpty()) {
+            weeklyRankingParticipantRepository.saveAll(participantEntities);
+        }
 
         System.out.println("Selected " + participantEntities.size() + " participants for the week starting " + startOfWeek);
     }
@@ -109,7 +116,7 @@ public class RankingService {
 
         // 5. 순위 부여 및 WeeklyRanking 엔티티 생성
         List<WeeklyRanking> weeklyRankings = new ArrayList<>();
-        int rank = 0;
+        int rank;
         for (int i = 0; i < userScores.size(); i++) {
             UserScore current = userScores.get(i);
             // 동점자 처리: 이전 사용자와 점수가 같으면 같은 순위 부여

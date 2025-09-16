@@ -27,9 +27,9 @@ public class RankingScheduler {
     }
 
     /**
-     * 매주 월요일 0시 1분에 주간 랭킹 참여자를 선정합니다.
+     * 매주 월요일 0시 5분에 주간 랭킹 참여자를 선정합니다.
      */
-    @Scheduled(cron = "0 1 0 * * MON")
+    @Scheduled(cron = "0 5 0 * * MON")
     public void scheduleWeeklyParticipantSelection() {
         System.out.println("Selecting weekly ranking participants...");
         rankingService.selectWeeklyParticipants();
@@ -45,9 +45,9 @@ public class RankingScheduler {
     }
 
     /**
-     * 매주 월요일 0시 5분에 주간 랭킹을 마감합니다.
+     * 매주 월요일 0시 1분에 주간 랭킹을 마감합니다.
      */
-    @Scheduled(cron = "0 5 0 * * MON")
+    @Scheduled(cron = "0 1 0 * * MON")
     public void scheduleWeeklyFinalization() {
         if (!initialized) return; // Add this line
         rankingService.finalizeWeeklyRanking();
