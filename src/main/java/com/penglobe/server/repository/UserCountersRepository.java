@@ -15,8 +15,8 @@ import java.util.Optional;
 
 public interface UserCountersRepository extends JpaRepository<UserCounters, Long> {
 
-    @Query("SELECT uc.user FROM UserCounters uc WHERE uc.lastAttendanceDate >= :sevenDaysAgo")
-    List<User> findUsersActiveSince(@Param("sevenDaysAgo") LocalDate sevenDaysAgo);
+    @Query("SELECT uc.user FROM UserCounters uc WHERE uc.lastAttendanceDate BETWEEN :startDate AND :endDate")
+    List<User> findUsersActiveBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     @Query("SELECT new com.penglobe.server.dto.MyPageDTO(uc.userId, uc.user.nickname, " +
             "CAST((uc.totalDistanceCo2Kg + uc.totalDietCo2Kg + uc.totalSurveyCo2Kg) AS java.math.BigDecimal)) " +
