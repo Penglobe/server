@@ -1,5 +1,7 @@
 package com.penglobe.server.service;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import com.penglobe.server.domain.ranking.AllRanking;
 import com.penglobe.server.domain.ranking.WeeklyRanking;
 import com.penglobe.server.domain.ranking.WeeklyRankingParticipant;
@@ -27,10 +29,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 @Service
 @RequiredArgsConstructor
 public class RankingService {
 
+    private final ReentrantLock weeklyUpdateLock = new ReentrantLock();
     private final UserRepository userRepository;
     private final UserCountersRepository userCountersRepository;
     private final WeeklyRankingRepository weeklyRankingRepository;
@@ -52,9 +57,10 @@ public class RankingService {
         // 1. Get users who ranked last week (Group A)
         List<User> rankedLastWeek = userRepository.findUsersWithLastWeekRank();
 
-        // 2. Get users who were active in the last 7 days (Group B)
-        LocalDate sevenDaysAgo = today.minusDays(7);
-        List<User> activeRecently = userCountersRepository.findUsersActiveSince(sevenDaysAgo);
+        // 2. Get users who were active last week (Monday to Sunday) (Group B)
+        LocalDate startOfLastWeek = today.minusWeeks(1).with(DayOfWeek.MONDAY);
+        LocalDate endOfLastWeek = startOfLastWeek.plusDays(6);
+        List<User> activeRecently = userCountersRepository.findUsersActiveBetween(startOfLastWeek, endOfLastWeek);
 
         // 3. Combine both lists and remove duplicates using a Set
         Set<User> combinedParticipants = new HashSet<>(rankedLastWeek);
@@ -82,66 +88,74 @@ public class RankingService {
      */
     @Transactional
     public void updateLiveWeeklyRanking() {
-        // 1. Get the fixed list of participants for this week.
-        List<Long> participantUserIds = weeklyRankingParticipantRepository.findAll().stream()
-                .map(WeeklyRankingParticipant::getUserId)
-                .toList();
-
-        if (participantUserIds.isEmpty()) {
-            System.out.println("No participants found for the current weekly ranking. Skipping update.");
-            weeklyRankingRepository.deleteAllInBatch(); // Ensure the ranking table is clear
+        if (!weeklyUpdateLock.tryLock()) {
+            System.out.println("Skipping weekly ranking update, another one is in progress.");
             return;
         }
+        try {
+            // 1. Get the fixed list of participants for this week.
+            List<Long> participantUserIds = weeklyRankingParticipantRepository.findAll().stream()
+                    .map(WeeklyRankingParticipant::getUserId)
+                    .toList();
 
-        List<User> activeUsers = userRepository.findAllById(participantUserIds);
-
-        // 2. 날짜 범위 정의
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startOfWeek = now.with(DayOfWeek.MONDAY).toLocalDate().atStartOfDay();
-
-        // 3. 사용자별 점수 계산
-        List<UserScore> userScores = new ArrayList<>();
-        for (User user : activeUsers) {
-            BigDecimal transportScore = transportActivityRepository.sumCo2KgByUserIdAndCreatedAtBetween(user.getUserId(), startOfWeek, now).orElse(BigDecimal.ZERO);
-            BigDecimal dietScore = dietRecordRepository.sumCo2KgByUserAndPeriod(user.getUserId(), startOfWeek, now);
-            BigDecimal surveyScore = surveyResponseRepository.sumTotalCo2KgByUserAndPeriod(user.getUserId(), startOfWeek, now);
-
-            BigDecimal totalScore = transportScore.add(dietScore).add(surveyScore);
-
-            userScores.add(new UserScore(user, totalScore));
-        }
-
-        // 4. 점수 기준으로 내림차순 정렬
-        userScores.sort(Comparator.comparing(UserScore::score).reversed());
-
-        // 5. 순위 부여 및 WeeklyRanking 엔티티 생성
-        List<WeeklyRanking> weeklyRankings = new ArrayList<>();
-        int rank;
-        for (int i = 0; i < userScores.size(); i++) {
-            UserScore current = userScores.get(i);
-            // 동점자 처리: 이전 사용자와 점수가 같으면 같은 순위 부여
-            if (i > 0 && current.score().compareTo(userScores.get(i - 1).score()) == 0) {
-                rank = weeklyRankings.get(i - 1).getRanking();
-            } else {
-                rank = i + 1;
+            if (participantUserIds.isEmpty()) {
+                System.out.println("No participants found for the current weekly ranking. Skipping update.");
+                weeklyRankingRepository.deleteAll(); // Ensure the ranking table is clear
+                return;
             }
 
-            WeeklyRanking rankingEntry = WeeklyRanking.builder()
-                    .userId(current.user().getUserId())
-                    .nickname(current.user().getNickname())
-                    .score(current.score())
-                    .ranking(rank)
-                    .build();
-            weeklyRankings.add(rankingEntry);
+            List<User> activeUsers = userRepository.findAllById(participantUserIds);
+
+            // 2. 날짜 범위 정의
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime startOfWeek = now.with(DayOfWeek.MONDAY).toLocalDate().atStartOfDay();
+
+            // 3. 사용자별 점수 계산
+            List<UserScore> userScores = new ArrayList<>();
+            for (User user : activeUsers) {
+                BigDecimal transportScore = transportActivityRepository.sumCo2KgByUserIdAndCreatedAtBetween(user.getUserId(), startOfWeek, now).orElse(BigDecimal.ZERO);
+                BigDecimal dietScore = dietRecordRepository.sumCo2KgByUserAndPeriod(user.getUserId(), startOfWeek, now);
+                BigDecimal surveyScore = surveyResponseRepository.sumTotalCo2KgByUserAndPeriod(user.getUserId(), startOfWeek, now);
+
+                BigDecimal totalScore = transportScore.add(dietScore).add(surveyScore);
+
+                userScores.add(new UserScore(user, totalScore));
+            }
+
+            // 4. 점수 기준으로 내림차순 정렬
+            userScores.sort(Comparator.comparing(UserScore::score).reversed());
+
+            // 5. 순위 부여 및 WeeklyRanking 엔티티 생성
+            List<WeeklyRanking> weeklyRankings = new ArrayList<>();
+            int rank;
+            for (int i = 0; i < userScores.size(); i++) {
+                UserScore current = userScores.get(i);
+                // 동점자 처리: 이전 사용자와 점수가 같으면 같은 순위 부여
+                if (i > 0 && current.score().compareTo(userScores.get(i - 1).score()) == 0) {
+                    rank = weeklyRankings.get(i - 1).getRanking();
+                } else {
+                    rank = i + 1;
+                }
+
+                WeeklyRanking rankingEntry = WeeklyRanking.builder()
+                        .userId(current.user().getUserId())
+                        .nickname(current.user().getNickname())
+                        .score(current.score())
+                        .ranking(rank)
+                        .build();
+                weeklyRankings.add(rankingEntry);
+            }
+
+            // 6. 테이블 업데이트
+            weeklyRankingRepository.deleteAll();
+            weeklyRankingRepository.saveAll(weeklyRankings);
+
+            System.out.println("실시간 랭킹 업데이트 완료. 처리된 사용자 수: " + weeklyRankings.size());
+            // Debugging: Log the content of weeklyRankings after saving
+            weeklyRankings.forEach(wr -> System.out.println("Saved WeeklyRanking: userId=" + wr.getUserId() + ", nickname=" + wr.getNickname() + ", score=" + wr.getScore() + ", rank=" + wr.getRanking()));
+        } finally {
+            weeklyUpdateLock.unlock();
         }
-
-        // 6. 테이블 업데이트
-        weeklyRankingRepository.deleteAllInBatch();
-        weeklyRankingRepository.saveAll(weeklyRankings);
-
-        System.out.println("실시간 랭킹 업데이트 완료. 처리된 사용자 수: " + weeklyRankings.size());
-        // Debugging: Log the content of weeklyRankings after saving
-        weeklyRankings.forEach(wr -> System.out.println("Saved WeeklyRanking: userId=" + wr.getUserId() + ", nickname=" + wr.getNickname() + ", score=" + wr.getScore() + ", rank=" + wr.getRanking()));
     }
 
     /**

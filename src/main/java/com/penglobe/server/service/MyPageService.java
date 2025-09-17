@@ -106,49 +106,4 @@ public class MyPageService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public void addDummyData(Long userId) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
-        // UserCounters counters = userCountersRepository.findByUserId(userId)
-        //         .orElseThrow(() -> new IllegalArgumentException("UserCounters not found for user ID: " + userId));
-
-        // 더미 TransportActivity 생성 및 수동 출석 업데이트 로직 제거.
-        // 이 메서드는 이제 테스트 목적으로 랭킹 업데이트만 트리거합니다.
-
-        // 지속적인 참여 테스트를 위한 더미 지난주 랭크 설정
-        user.setLastWeekRank(1);
-        userRepository.save(user);
-
-        // 현재 주의 참여자 목록에 사용자가 있는지 확인
-        LocalDate currentWeekStartDate = LocalDate.now().with(DayOfWeek.MONDAY);
-        if (!weeklyRankingParticipantRepository.existsByUserIdAndWeekStartDate(userId, currentWeekStartDate)) {
-            WeeklyRankingParticipant participant = WeeklyRankingParticipant.builder()
-                    .userId(userId)
-                    .weekStartDate(currentWeekStartDate)
-                    .build();
-            weeklyRankingParticipantRepository.save(participant);
-        }
-
-        // 즉시 랭킹 업데이트 강제 실행
-        rankingService.selectWeeklyParticipants();
-        rankingService.updateLiveWeeklyRanking();
-        rankingService.updateAllRanking();
-        rankingService.updateRegionRankings();
-    }
-
-    @Transactional
-    public void resetUserAttendanceCounters(Long userId) {
-        UserCounters counters = userCountersRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("UserCounters not found for user ID: " + userId));
-
-        counters.setAttendanceTotalDays(0);
-        counters.setLongestAttendanceStreak(0);
-        counters.setAttendanceStreakDays(0);
-        counters.setLastAttendanceDate(null);
-        userCountersRepository.save(counters);
-        attendanceLogRepository.deleteByUser(userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId)));
-        transportActivityRepository.deleteByUser(userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId)));
-        dietRecordRepository.deleteByUser(userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId)));
-    }
 }
