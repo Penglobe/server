@@ -1,5 +1,6 @@
 package com.penglobe.server.dto;
 
+import com.penglobe.server.domain.user.UserType;
 import lombok.*;
 import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -19,6 +20,7 @@ public class MyPageDTO {
     private Integer longestAttendanceStreak;
     private Integer attendanceStreakDays;
     private Integer regionId;
+    private UserType type;
     @JsonProperty("regionName")
     private String regionName;
     private BigDecimal totalScore;
