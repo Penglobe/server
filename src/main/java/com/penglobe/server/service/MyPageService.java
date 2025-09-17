@@ -65,7 +65,8 @@ public class MyPageService {
                 .regionId(user.getRegionId())
                 .regionName(regionName)
                 .totalScore(totalScore)
-                .profile(user.getProfile()) // Added profile field
+                .profile(user.getProfile())
+                .type(user.getType())
                 .build();
     }
 
