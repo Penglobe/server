@@ -6,7 +6,8 @@ import com.penglobe.server.domain.user.User;
 import com.penglobe.server.domain.user.UserCounters;
 import com.penglobe.server.dto.survey.*;
 import com.penglobe.server.repository.*;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@org.springframework.transaction.annotation.Transactional
 
 public class SurveyService {
 
@@ -51,6 +52,7 @@ public class SurveyService {
     }
 
     //설문제출
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public SurveyResultDTO submitSurvey(SurveySubmitRequestDTO dto) {
         // 오늘 날짜 구간
         LocalDateTime today = LocalDateTime.now();
