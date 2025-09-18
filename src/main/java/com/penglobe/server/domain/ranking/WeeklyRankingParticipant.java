@@ -16,7 +16,8 @@ public class WeeklyRankingParticipant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "weekly_ranking_participants_id")
+    private Long weeklyRankingParticipantId;
 
     @Column(nullable = false)
     private Long userId;
