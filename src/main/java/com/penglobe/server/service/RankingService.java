@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @RequiredArgsConstructor
 public class RankingService {
 
+    private final ReentrantLock allRankingUpdateLock = new ReentrantLock();
     private final ReentrantLock weeklyUpdateLock = new ReentrantLock();
     private final UserRepository userRepository;
     private final UserCountersRepository userCountersRepository;
@@ -100,7 +101,7 @@ public class RankingService {
 
             if (participantUserIds.isEmpty()) {
                 System.out.println("No participants found for the current weekly ranking. Skipping update.");
-                weeklyRankingRepository.deleteAll(); // Ensure the ranking table is clear
+                weeklyRankingRepository.deleteAllInBatch();
                 return;
             }
 
@@ -198,45 +199,52 @@ public class RankingService {
     /**
      * 전체 랭킹을 업데이트하는 로직
      */
-    @Transactional
-    public void updateAllRanking() {
-        // 1. DB에서 직접 합산 및 정렬된 점수 목록 조회
-        List<MyPageDTO> userScores = userCountersRepository.findUserTotalScores();
-
-        // 2. 순위 부여 및 AllRanking 엔티티 생성
-        List<AllRanking> allRankings = new ArrayList<>();
-        for (int i = 0; i < userScores.size(); i++) {
-            MyPageDTO current = userScores.get(i);
-
-            // 점수가 0 이하인 사용자는 랭킹에서 제외
-            if (current.getTotalScore() == null || current.getTotalScore().compareTo(BigDecimal.ZERO) <= 0) {
-                continue;
+        @Transactional
+        public void updateAllRanking() {
+            if (!allRankingUpdateLock.tryLock()) {
+                System.out.println("Skipping all ranking update, another one is in progress.");
+                return;
             }
-
-            int rank;
-            // 동점자 처리
-            if (i > 0 && current.getTotalScore().compareTo(userScores.get(i - 1).getTotalScore()) == 0) {
-                rank = allRankings.get(allRankings.size() - 1).getRanking();
-            } else {
-                rank = allRankings.size() + 1;
+            try {
+                // 1. DB에서 직접 합산 및 정렬된 점수 목록 조회
+                List<MyPageDTO> userScores = userCountersRepository.findUserTotalScores();
+    
+                // 2. 순위 부여 및 AllRanking 엔티티 생성
+                List<AllRanking> allRankings = new ArrayList<>();
+                for (int i = 0; i < userScores.size(); i++) {
+                    MyPageDTO current = userScores.get(i);
+    
+                    // 점수가 0 이하인 사용자는 랭킹에서 제외
+                    if (current.getTotalScore() == null || current.getTotalScore().compareTo(BigDecimal.ZERO) <= 0) {
+                        continue;
+                    }
+    
+                    int rank;
+                    // 동점자 처리
+                    if (i > 0 && current.getTotalScore().compareTo(userScores.get(i - 1).getTotalScore()) == 0) {
+                        rank = allRankings.get(allRankings.size() - 1).getRanking();
+                    } else {
+                        rank = allRankings.size() + 1;
+                    }
+    
+                    AllRanking rankingEntry = AllRanking.builder()
+                            .userId(current.getUserId())
+                            .nickname(current.getNickname())
+                            .score(current.getTotalScore())
+                            .ranking(rank)
+                            .build();
+                    allRankings.add(rankingEntry);
+                }
+    
+                // 3. 테이블 업데이트
+                allRankingRepository.deleteAllInBatch();
+                allRankingRepository.saveAll(allRankings);
+    
+                System.out.println("전체 랭킹 업데이트 완료. 처리된 사용자 수: " + allRankings.size());
+            } finally {
+                allRankingUpdateLock.unlock();
             }
-
-            AllRanking rankingEntry = AllRanking.builder()
-                    .userId(current.getUserId())
-                    .nickname(current.getNickname())
-                    .score(current.getTotalScore())
-                    .ranking(rank)
-                    .build();
-            allRankings.add(rankingEntry);
         }
-
-        // 3. 테이블 업데이트
-        allRankingRepository.deleteAllInBatch();
-        allRankingRepository.saveAll(allRankings);
-
-        System.out.println("전체 랭킹 업데이트 완료. 처리된 사용자 수: " + allRankings.size());
-    }
-
     /**
      * 지역별 랭킹 점수를 업데이트하는 로직
      */

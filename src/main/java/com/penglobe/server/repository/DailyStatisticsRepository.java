@@ -24,8 +24,6 @@ public interface DailyStatisticsRepository extends JpaRepository<DailyStatistics
     Optional<DailyStatistics> findByUserIdAndDate(Long userId, LocalDate date);
 
     // ✅ 오늘 + 전체 통계
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")}) // 3 seconds timeout
     Optional<DailyStatistics> findByUserIdIsNullAndDate(LocalDate date);
     // 사용자별 주간 평균
     @Query(value = "SELECT DAYOFWEEK(created_at) AS day_of_week, total_co2kg " +
