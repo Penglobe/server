@@ -9,6 +9,7 @@ import com.penglobe.server.repository.*;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -188,17 +189,25 @@ public class SurveyService {
         LocalDate today = LocalDate.now();
         int dayOfWeek = today.getDayOfWeek().getValue() -1;
 
-        //오늘 날짜 없으면 새로 생성
-        DailyStatistics avgDaily = dailyStatisticsRepository.findByUserIdIsNullAndDate(today)
-                .orElseGet(() -> {
-                    DailyStatistics d = new DailyStatistics();
-                    d.setUserId(null);
-                    d.setDate(today);
-                    d.setDayOfWeek(dayOfWeek);
-                    d.setStatisticsTotalCo2kg(0);
-                    d.setUserCount(0);
-                    return d;
-                });
+        DailyStatistics avgDaily = null;
+        try {
+            avgDaily = dailyStatisticsRepository.findByUserIdIsNullAndDate(today)
+                    .orElseGet(() -> {
+                        DailyStatistics d = new DailyStatistics();
+                        d.setUserId(null);
+                        d.setDate(today);
+                        d.setDayOfWeek(dayOfWeek);
+                        d.setStatisticsTotalCo2kg(0);
+                        d.setUserCount(0);
+                        // 새로 생성된 객체를 즉시 저장하여 레코드를 확립
+                        return dailyStatisticsRepository.save(d);
+                    });
+        } catch (DataIntegrityViolationException e) {
+            // Unique Constraint Violation 예외 발생 시, 다른 스레드가 이미 생성했으므로
+            // 기존 레코드를 다시 조회하여 가져옴
+            avgDaily = dailyStatisticsRepository.findByUserIdIsNullAndDate(today)
+                                                .orElseThrow(() -> new IllegalStateException("DailyStatistics record not found after concurrent creation attempt."));
+        }
 
         //전체 누적값 업데이트
         avgDaily.setStatisticsTotalCo2kg(avgDaily.getStatisticsTotalCo2kg() + totalCo2);
