@@ -28,6 +28,10 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // main
+                        .requestMatchers("/", "/index.html").permitAll()
+                        // static resources 허용
+                        .requestMatchers("/images/**", "/css/**", "/js/**", "/favicon.ico").permitAll()
                         // Swagger / API Docs
                         .requestMatchers("/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
                         // Auth

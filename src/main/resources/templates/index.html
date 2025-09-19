@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>펭글로브 - 메인 페이지</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" th:href="@{/images/peng-face.png}">
+    <link rel="icon" type="image/png" sizes="64x64" th:href="@{/images/peng-face.png}">
+    <link rel="apple-touch-icon" th:href="@{/images/peng-face.png}">
+    <link rel="shortcut icon" th:href="@{/images/peng-face.png}">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(to bottom, #e6f7ff, #ffffff);
+            color: #333;
+        }
+        header {
+            background-color: #00aaff;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.2rem;
+        }
+
+        /* 메인 컨테이너 (좌우 분할) */
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            max-width: 1000px;
+            margin: 50px auto;
+            gap: 50px;
+            padding: 20px;
+        }
+
+        /* 왼쪽 이미지 */
+        .main-image img {
+            width: 350px;
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* 오른쪽 콘텐츠 */
+        .main-content {
+            flex: 1;
+        }
+        .intro h2 {
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            color: #0077aa;
+        }
+        .intro p {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .qr-section {
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            max-width: 400px;
+        }
+        .qr-section h2 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #0077aa;
+        }
+        .qr-section img {
+            width: 180px;
+            height: 180px;
+            margin-top: 10px;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding: 15px;
+            font-size: 0.9rem;
+            background: #f5f5f5;
+            color: #555;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>🌍 펭글로브 (Penglobe)</h1>
+</header>
+
+<main class="main-container">
+    <!-- 왼쪽: 펭귄 이미지 -->
+    <div class="main-image">
+        <img th:src="@{/images/peng.png}" alt="펭글로브 펭귄 이미지">
+    </div>
+
+    <!-- 오른쪽: 소개글 + QR -->
+    <div class="main-content">
+        <section class="intro">
+            <h2>환경을 지키는 작은 발걸음</h2>
+            <p>
+                펭글로브는 우리의 일상 속 작은 선택들이 모여
+                지구를 지킬 수 있다는 믿음에서 시작되었습니다.<br><br>
+                걸음, 식사, 생활 습관을 기록하면서 탄소 절감량을 확인하고,
+                재미있는 보상과 함께 환경 보호에 동참해보세요.
+            </p>
+        </section>
+
+        <section class="qr-section">
+            <h2>앱 다운로드 / 참여하기</h2>
+            <p>아래 QR코드를 스캔해 펭글로브에 함께하세요!</p>
+            <img th:src="@{/images/qr-code.png}" alt="펭글로브 QR 코드">
+        </section>
+    </div>
+</main>
+
+<footer>
+    © 2025 Penglobe. All Rights Reserved.
+</footer>
+</body>
+</html>
