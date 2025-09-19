@@ -100,13 +100,16 @@ public class ProductController {
     }
 
     @Operation(summary = "상품 수정 - multipart", description = "부분 수정 + 이미지 교체 가능")
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(
+            value = "/{id}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<ApiResponse<Void>> update(
-
             @PathVariable Long id,
-            @RequestPart(value = "name", required = false) String name,
-            @RequestPart(value = "description", required = false) String description,
-            @RequestPart(value = "price", required = false) Integer price,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "price", required = false) Integer price,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) {
         try {
@@ -121,7 +124,7 @@ public class ProductController {
             req.setName(name);
             req.setDescription(description);
             req.setPrice(price);
-            req.setImg(newImg); // null이면 기존 유지
+            req.setImg(newImg);
 
             productService.update(id, req);
 
