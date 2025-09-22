@@ -22,49 +22,9 @@ import java.util.Map;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RestClient restClient = RestClient.create();
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenService tokenService;
     private final UserCountersRepository userCountersRepository;
-
-    //카카오 로그인
-    //앱에서 받은 accessToken으로 /v2/user/me 호출
-    public AuthResponse loginWithKakao (String kakaoAccessToken){
-        Map<?,?> me = restClient.get()
-                .uri("https://kapi.kakao.com/v2/user/me")
-                .header("Authorization", "Bearer " + kakaoAccessToken)
-                .retrieve()
-                .body(Map.class);
-
-        if (me == null || me.get("id") == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "Kakao /v2/user/me returned no id: " + String.valueOf(me));
-        }
-
-        Long kakaoId = ((Number) me.get("id")).longValue();
-
-        User user = userRepository.findByKakaoId(kakaoId).orElseGet(() -> {
-            User u = User.builder()
-                    .kakaoId(kakaoId)
-                    .isProfileComplete(false)
-                    .build();
-            u = userRepository.save(u);
-            // 신규 생성 시 즉시 카운터도 생성
-            userCountersRepository.save(UserCounters.builder().user(u).build());
-            return u;
-        });
-        // 혹시 예전 사용자 중 카운터가 없는 경우 대비해 한 번 더 보정
-        if (!userCountersRepository.existsById(user.getUserId())) {
-            userCountersRepository.save(UserCounters.builder().user(user).build());
-        }
-
-        String accessToken = jwtTokenProvider.createToken(user.getUserId(), "USER");
-        String refreshToken = tokenService.issueFor(user.getUserId());
-        return new AuthResponse(accessToken,
-                refreshToken,
-                Boolean.TRUE.equals(user.getIsProfileComplete()),
-                user.getUserId(), user.getType());
-    }
 
     //자체 회원가입
     @Transactional

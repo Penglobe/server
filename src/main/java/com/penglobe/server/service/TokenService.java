@@ -13,7 +13,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TokenService {
 
-    // 7일(초) – 필요 시 application.yml/properties로 분리
     private static final long REFRESH_EXPIRE_SECONDS = 60L * 60L * 24L * 30L;
 
     private final RefreshTokenRepository refreshTokenRepository;

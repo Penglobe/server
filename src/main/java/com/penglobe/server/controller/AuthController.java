@@ -29,15 +29,6 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
-    @Operation(summary = "카카오 로그인", description = "RN앱에서 받은 accessToken을 서버로 전달하면, 서버가 카카오 /v2/user/me로 검증 후 JWT를 발급합니다.")
-    @PostMapping("/kakao")
-    public ResponseEntity<ApiResponse<AuthResponse>> kakao(@Valid @RequestBody KakaoLoginRequest request) {
-        AuthResponse res = authService.loginWithKakao(request.getAccessToken());
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(ApiResponse.success(200, "카카오 로그인 성공", res));
-    }
-
     @Operation(summary = "자체 회원가입", description = "이메일/비밀번호/닉네임/지역 입력으로 계정을 생성합니다.")
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody LocalSignupRequest req) {
@@ -107,17 +98,4 @@ public class AuthController {
         }
         return ResponseEntity.ok(ApiResponse.success(200, "로그아웃 완료", null));
     }
-
-    @Operation(summary = "카카오 사용자 프로필 완료",
-            description = "카카오 로그인 사용자의 지역/닉네임 등을 저장하고 isProfileComplete=true로 업데이트")
-    @PatchMapping("/me/{userId}/complete-profile")
-    public ResponseEntity<ApiResponse<Void>> completeProfile(
-            @PathVariable long userId,
-            @Valid @RequestBody CompleteProfileRequest req) {
-        authService.completeProfile(userId, req);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(ApiResponse.success(200, "프로필 완료", null));
-    }
-
 }
