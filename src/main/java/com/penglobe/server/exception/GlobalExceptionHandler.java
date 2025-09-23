@@ -38,4 +38,5 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(500)
                 .body(ApiResponse.fail(500, e.getClass().getSimpleName() + ": " + (e.getMessage()==null?"":e.getMessage())));
     }
+
 }

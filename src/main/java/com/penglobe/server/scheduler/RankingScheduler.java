@@ -18,13 +18,18 @@ public class RankingScheduler {
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        System.out.println("Performing initial data setup on startup...");
-        rankingService.selectWeeklyParticipants(); // Select participants first
-        rankingService.updateLiveWeeklyRanking();
+        System.out.println("서버 기동 완료. 초기화 작업 실행...");
+
+        // 🚫 주간 참여자 선정, 주간 랭킹 초기화는 하지 않음
+        // rankingService.selectWeeklyParticipants();
+        // rankingService.updateLiveWeeklyRanking();
+
+        // ✅ 전체/지역 랭킹은 재시작해도 갱신해주는 게 안전
         rankingService.updateAllRanking();
         rankingService.updateRegionRankings();
-        System.out.println("Initial data setup complete.");
-        initialized = true; // Set to true after initialization
+
+        initialized = true;
+        System.out.println("랭킹 갱신 완료");
     }
 
     /**
