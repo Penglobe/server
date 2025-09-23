@@ -32,6 +32,8 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html").permitAll()
                         // static resources 허용
                         .requestMatchers("/images/**", "/css/**", "/js/**", "/favicon.ico").permitAll()
+                        // APK 다운로드 허용 👇
+                        .requestMatchers("/download/**").permitAll()
                         // Swagger / API Docs
                         .requestMatchers("/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
                         // Auth

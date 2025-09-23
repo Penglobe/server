@@ -45,4 +45,4 @@ src/main/resources/application.properties
 src/main/resources/application-docker.properties
 
 ### data.sql ###
-src/main/resources/data.sql
+src/main/resources/data.sqlsrc/main/resources/static/download/*.apk
