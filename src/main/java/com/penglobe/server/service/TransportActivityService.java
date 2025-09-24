@@ -98,15 +98,9 @@ public class TransportActivityService {
             // ✅ UserCounters 업데이트 (환경 절감량 누적)
             userCountersRepository.addDistanceCo2(activity.getUser(), co2Kg);
 
-            // ✅ 출석 로그
-            boolean newAttendance = attendanceLogService.markAttendance(activity.getUser(), AttendanceType.TRANSPORT_ACTIVITY);
-            if (newAttendance) {
-                log.info("오늘 첫 출석 인정 ✅");
-            } else {
-                log.info("이미 오늘 출석함 → 무시");
-            }
-        } else {
-            log.info("이동 거리가 0 → 포인트/출석 처리 안함 ❌");
+            // ✅ 출석
+            attendanceLogService.markAttendance(activity.getUser(), AttendanceType.TRANSPORT_ACTIVITY);
+
         }
 
         activityRepository.save(activity);
