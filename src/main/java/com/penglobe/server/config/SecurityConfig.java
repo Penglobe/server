@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // main
-                        .requestMatchers("/", "/index.html").permitAll()
+                        .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
                         // static resources 허용
                         .requestMatchers("/images/**", "/css/**", "/js/**", "/favicon.ico").permitAll()
                         // APK 다운로드 허용 👇
