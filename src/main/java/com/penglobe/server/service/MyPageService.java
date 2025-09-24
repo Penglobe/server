@@ -39,8 +39,6 @@ public class MyPageService {
         UserCounters userCounters = userCountersRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("UserCounters not found for user ID: " + userId));
 
-        System.out.println("DEBUG: MyPageService - getMyPageInfo - Fetched UserCounters: totalDays=" + userCounters.getAttendanceTotalDays() + ", longestStreak=" + userCounters.getLongestAttendanceStreak());
-
         String regionName = null;
         if (user.getRegionId() != null) {
             regionName = regionRepository.findById(user.getRegionId())
@@ -52,9 +50,6 @@ public class MyPageService {
                 .sumTotalCo2ByUserId(userId)
                 .orElse(BigDecimal.ZERO);
 
-        System.out.println("DEBUG: MyPageService - User Profile: " + user.getProfile());
-        System.out.println("DEBUG: MyPageService - User Region ID: " + user.getRegionId());
-        System.out.println("DEBUG: MyPageService - Resolved Region Name: " + regionName);
         return MyPageDTO.builder()
                 .userId(userId)
                 .nickname(user.getNickname())
