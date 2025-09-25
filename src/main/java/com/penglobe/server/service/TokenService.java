@@ -20,21 +20,21 @@ public class TokenService {
     /** 로그인/재발급 시 새 RT 발급 (기존 것 삭제 → 로테이션) */
     @Transactional
     public String issueFor(Long userId) {
-        final long now = Instant.now().toEpochMilli();
-        final long expiry = now + (REFRESH_EXPIRE_SECONDS * 1000L);
+        final long expiry = Instant.now().toEpochMilli() + REFRESH_EXPIRE_SECONDS * 1000L;
         final String token = UUID.randomUUID().toString();
 
-        // 유저별 단일 RT만 유지
-        refreshTokenRepository.deleteByUserId(userId);
+        RefreshToken rt = refreshTokenRepository.findByUserId(userId)
+                .orElseGet(() -> RefreshToken.builder()
+                        .userId(userId)
+                        .build());
 
-        RefreshToken rt = RefreshToken.builder()
-                .userId(userId)
-                .token(token)
-                .expiryTime(expiry)
-                .build();
+        rt.setToken(token);
+        rt.setExpiryTime(expiry);
+
         refreshTokenRepository.save(rt);
         return token;
     }
+
 
     /** RT 검증 → 유효하면 userId 반환, 아니면 null */
     @Transactional(readOnly = true)
