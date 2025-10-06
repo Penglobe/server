@@ -29,9 +29,8 @@ Penglobe 프로젝트의 Spring Boot 기반 서버입니다. 사용자 활동을
 
 ## 📜 ERD
 
-*ERD 다이어그램을 여기에 추가하세요. (이미지 또는 링크)*
+<img width="2250" height="1727" alt="Penglobe_ERD" src="https://github.com/user-attachments/assets/ddf444d2-2590-4552-bb3e-e8ea7d31da86" />
 
-![ERD](https://user-images.githubusercontent.com/path/to/your/erd.png)
 
 ## 🗄️ 데이터베이스 주요 엔티티
 
