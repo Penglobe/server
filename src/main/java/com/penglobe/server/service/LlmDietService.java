@@ -179,20 +179,27 @@ public class LlmDietService {
             throw new IllegalArgumentException("LLM 응답에 필수 필드(totalCo2Kg/items/unknown)가 없습니다.");
         }
 
-        // 3) 아이템/합계 파싱
+        // 3) 아이템/합계 파싱 + 이상치 검증
         BigDecimal llmTotalRaw = readDecimal(root.get("totalCo2Kg"));
 
         List<DietResultDTO.ItemResult> itemsRoundedForDto = new ArrayList<>();
         List<BigDecimal> itemCo2RawList = new ArrayList<>();
+        int itemIndex = 0;
         for (JsonNode n : root.get("items")) {
             if (!n.has("name") || !n.has("co2Kg")) continue;
             String name = n.get("name").asText();
             BigDecimal co2Raw = readDecimal(n.get("co2Kg")); // raw 유지
-            itemCo2RawList.add(co2Raw);
+            
+            // 아이템별 이상치 검증 (음식양 기반)
+            DietRequestDTO.FoodItem origItem = itemIndex < req.getItems().size() ? req.getItems().get(itemIndex) : null;
+            BigDecimal validatedCo2 = validateAndClipItem(name, co2Raw, origItem);
+            itemIndex++;
+            
+            itemCo2RawList.add(validatedCo2);
 
             itemsRoundedForDto.add(DietResultDTO.ItemResult.builder()
                     .name(name)
-                    .co2Kg(r2(co2Raw))
+                    .co2Kg(r2(validatedCo2))
                     .build());
         }
 
@@ -217,11 +224,13 @@ public class LlmDietService {
                 adj.cook, adj.transport, adj.packaging, adj.facility, adj.waste, adjTotalRaw
         );
 
-        // 5) 최종 합계
-        BigDecimal finalTotalRounded = r2(llmTotalRaw.add(adjTotalRaw));
+        // 5) Total 이상치 검증
+        BigDecimal finalTotalBeforeClip = llmTotalRaw.add(adjTotalRaw);
+        BigDecimal finalTotalClipped = validateAndClipTotal(finalTotalBeforeClip);
+        BigDecimal finalTotalRounded = r2(finalTotalClipped);
 
-        log.info("[Diet][OUT] finalTotal={} (= food(raw):{} + adj(raw):{})",
-                finalTotalRounded, llmTotalRaw, adjTotalRaw);
+        log.info("[Diet][OUT] finalTotal={} (= food(raw):{} + adj(raw):{} → clipped:{})",
+                finalTotalRounded, llmTotalRaw, adjTotalRaw, finalTotalClipped);
 
         // 6) 최종 DTO 반환
         return DietResultDTO.builder()
@@ -262,6 +271,104 @@ public class LlmDietService {
             }
         }
         return new Adjustment(cook, transport, packaging, facility, waste);
+    }
+
+    // ===== 이상치 보정 상수 =====
+    private static final BigDecimal ITEM_MAX_CO2_KG = bd("3.0");           // 아이템 최대값
+    private static final BigDecimal TOTAL_MIN_CO2_KG = bd("0.05");          // Total 최소값
+    private static final BigDecimal TOTAL_MAX_CO2_KG = bd("5.0");           // Total 최대값
+    private static final BigDecimal MAX_DENSITY_KG_PER_G = bd("0.02");     // 100g당 2kg 이상은 비정상
+
+    /**
+     * 아이템별 이상치 검증 및 클리핑
+     * 1) 음수 → 0
+     * 2) 음식양 기반 밀도 검증 (g당 최대 0.02kg)
+     * 3) 최대값 클리핑 (3.0kg)
+     */
+    private BigDecimal validateAndClipItem(String foodName, BigDecimal co2Kg, DietRequestDTO.FoodItem origItem) {
+        // 음수 → 0
+        if (co2Kg.compareTo(BigDecimal.ZERO) < 0) {
+            log.warn("[Diet][CLIP-ITEM] {} 음수값: {}kg → 0kg", foodName, co2Kg);
+            return BigDecimal.ZERO;
+        }
+
+        // 음식양 기반 밀도 검증
+        if (origItem != null) {
+            BigDecimal servingGrams = extractServingGrams(origItem);
+            if (servingGrams != null && servingGrams.compareTo(BigDecimal.ZERO) > 0) {
+                // 밀도 = co2Kg / (servingGrams / 1000)
+                BigDecimal servingKg = servingGrams.divide(bd("1000"), 6, RoundingMode.HALF_UP);
+                BigDecimal density = co2Kg.divide(servingKg, 6, RoundingMode.HALF_UP);
+                if (density.compareTo(MAX_DENSITY_KG_PER_G) > 0) {
+                    BigDecimal clipped = servingKg.multiply(MAX_DENSITY_KG_PER_G);
+                    log.warn("[Diet][CLIP-ITEM] {} 비정상 밀도: {:.4f}kg/g ({} g) → {}kg",
+                            foodName, density, servingGrams, clipped);
+                    return clipped;
+                }
+            }
+        }
+
+        // 최대값 클리핑
+        if (co2Kg.compareTo(ITEM_MAX_CO2_KG) > 0) {
+            log.warn("[Diet][CLIP-ITEM] {} 최대값 초과: {}kg → {}kg", foodName, co2Kg, ITEM_MAX_CO2_KG);
+            return ITEM_MAX_CO2_KG;
+        }
+
+        return co2Kg;
+    }
+
+    /**
+     * 음식양 추출 (serving 또는 amount에서)
+     * "100g" → 100, "2개" → null
+     */
+    private BigDecimal extractServingGrams(DietRequestDTO.FoodItem item) {
+        if (item == null) return null;
+        if (item.getServing() != null) {
+            BigDecimal num = extractNumberFromString(item.getServing().toString());
+            if (num != null) return num;
+        }
+        if (item.getAmount() != null) {
+            BigDecimal num = extractNumberFromString(item.getAmount().toString());
+            if (num != null) return num;
+        }
+        return null;
+    }
+
+    /**
+     * 문자열에서 숫자 추출 (g 단위만)
+     * "100g" → 100, "50.5g" → 50.5, "2개" → null
+     */
+    private BigDecimal extractNumberFromString(String str) {
+        if (str == null) return null;
+        var m = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*[gG]").matcher(str);
+        if (m.find()) {
+            try {
+                return new BigDecimal(m.group(1));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Total 이상치 검증 및 클리핑
+     * 범위: 0.05kg ~ 5.0kg
+     */
+    private BigDecimal validateAndClipTotal(BigDecimal totalCo2Kg) {
+        // 최소값
+        if (totalCo2Kg.compareTo(TOTAL_MIN_CO2_KG) < 0) {
+            log.warn("[Diet][CLIP-TOTAL] 최소값 미만: {}kg → {}kg", totalCo2Kg, TOTAL_MIN_CO2_KG);
+            return TOTAL_MIN_CO2_KG;
+        }
+
+        // 최대값
+        if (totalCo2Kg.compareTo(TOTAL_MAX_CO2_KG) > 0) {
+            log.warn("[Diet][CLIP-TOTAL] 최대값 초과: {}kg → {}kg", totalCo2Kg, TOTAL_MAX_CO2_KG);
+            return TOTAL_MAX_CO2_KG;
+        }
+
+        return totalCo2Kg;
     }
 
     /** 조정값 컨테이너 — 내부는 반올림 없이 유지 */
